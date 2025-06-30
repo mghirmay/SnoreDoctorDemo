@@ -361,7 +361,29 @@ class MainViewController: UIViewController {
         self.present(hostingController, animated: true, completion: nil)
     }
 
+    @IBAction func showSleepReport(_ sender: UIButton) {
+            // 1. Get the Core Data managed object context
+            // You already have PersistenceController.shared, so this is straightforward.
+            let managedObjectContext = PersistenceController.shared.container.viewContext
 
+            // 2. Instantiate your SwiftUI SleepReportView
+            let sleepReportView = SleepReportView()
+                // 3. Inject the managed object context into the SwiftUI environment
+                .environment(\.managedObjectContext, managedObjectContext)
+
+            // 4. Create a UIHostingController with your SwiftUI view as its root view
+            let hostingController = UIHostingController(rootView: sleepReportView)
+
+            // 5. (Optional) Configure presentation style
+            // .fullScreen covers the entire screen.
+            // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
+            // .formSheet also presents as a sheet, typically for forms.
+           // hostingController.modalPresentationStyle = .fullScreen
+
+            // 6. Present the UIHostingController
+            self.present(hostingController, animated: true, completion: nil)
+        }
+    
     @IBAction func showSettings(_ sender: UIButton) {
         let managedObjectContext = PersistenceController.shared.container.viewContext
         let settingsView = SettingsView()

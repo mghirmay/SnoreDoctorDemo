@@ -11,28 +11,32 @@ struct PersistenceController {
     static let shared = PersistenceController() // Singleton instance
 
     let container: NSPersistentContainer
-
-    init() {
-        container = NSPersistentContainer(name: "SnoreDoctorDataModel") // Match your .xcdatamodeld file name
-        container.loadPersistentStores { description, error in
-            if let error = error {
-                // Handle the error appropriately in a production app
-                // For development, fatalError is fine, but consider more robust logging/UI for users.
-                fatalError("Failed to load Core Data stack: \(error.localizedDescription)")
+    
+    init(inMemory: Bool = false) {
+            container = NSPersistentContainer(name: "SnoreDoctorDataModel") // Replace with your actual model name
+            if inMemory {
+                container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
             }
+            container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+                if let error = error as NSError? {
+                    fatalError("Unresolved error \(error), \(error.userInfo)")
+                }
+            })
+   
+        
+            // --- ADDITIONS START HERE ---
+
+            // 1. Crucial for automatically merging changes from background contexts to the main view context.
+            container.viewContext.automaticallyMergesChangesFromParent = true
+
+            // 2. Optional: Improves performance by disabling undo/redo tracking
+            // if you don't explicitly use it for the main context.
+            container.viewContext.undoManager = nil
+            
+            // --- ADDITIONS END HERE ---
         }
-        
-        // --- ADDITIONS START HERE ---
 
-        // 1. Crucial for automatically merging changes from background contexts to the main view context.
-        container.viewContext.automaticallyMergesChangesFromParent = true
 
-        // 2. Optional: Improves performance by disabling undo/redo tracking
-        // if you don't explicitly use it for the main context.
-        container.viewContext.undoManager = nil
-        
-        // --- ADDITIONS END HERE ---
-    }
 
     // MARK: - Saving Data
     func save() {

@@ -91,7 +91,7 @@
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" image="chart.bar.yaxis" catalog="system"/>
                                         <connections>
-                                            <action selector="showHistogram:" destination="BYZ-38-t0r" eventType="touchUpInside" id="SK8-E1-qgk"/>
+                                            <action selector="showSleepReport:" destination="BYZ-38-t0r" eventType="touchUpInside" id="jox-Zi-oJJ"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rY5-AL-b38">

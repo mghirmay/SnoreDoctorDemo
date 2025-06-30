@@ -10,6 +10,7 @@
 		961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 961CD85D2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld */; };
 		961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */; };
 		962549B92E1217D300EAFF47 /* TestToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962549B82E1217D300EAFF47 /* TestToolbarView.swift */; };
+		9636D1512E133C1C0081F469 /* SleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9676F68F2E13355700B7645F /* SleepReportView.swift */; };
 		966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */; };
 		966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */; };
 		9676F6592E130D5800B7645F /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9676F6582E130D5800B7645F /* README.md */; };
@@ -57,6 +58,7 @@
 		966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SleepingSessions+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9676F6582E130D5800B7645F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9676F65A2E130D6700B7645F /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		9676F68F2E13355700B7645F /* SleepReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepReportView.swift; sourceTree = "<group>"; };
 		968CD7802E119DA0009F5DB2 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		968CD7822E119DC3009F5DB2 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		968CD7862E11A103009F5DB2 /* AudioPlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackView.swift; sourceTree = "<group>"; };
@@ -160,6 +162,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		9676F68E2E13354F00B7645F /* Report */ = {
+			isa = PBXGroup;
+			children = (
+				9676F68F2E13355700B7645F /* SleepReportView.swift */,
+			);
+			path = Report;
+			sourceTree = "<group>";
+		};
 		968CD77F2E119D77009F5DB2 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
@@ -185,6 +195,7 @@
 		96B49EA32DCFDB9200D779F9 = {
 			isa = PBXGroup;
 			children = (
+				9676F68E2E13354F00B7645F /* Report */,
 				9676F65A2E130D6700B7645F /* LICENSE */,
 				9676F6582E130D5800B7645F /* README.md */,
 				96DA36682E1231FA001D8F43 /* Chart */,
@@ -381,6 +392,7 @@
 			files = (
 				961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */,
 				96DA367C2E124039001D8F43 /* SoundEventPlaybackDelegate.swift in Sources */,
+				9636D1512E133C1C0081F469 /* SleepReportView.swift in Sources */,
 				968CD7872E11A103009F5DB2 /* AudioPlaybackView.swift in Sources */,
 				966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */,
 				96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */,

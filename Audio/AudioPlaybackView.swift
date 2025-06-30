@@ -1,37 +1,36 @@
-//
-//  AudioPlaybackView.swift
-//  SnoreDoctorDemo
-//
-//  Created by musie Ghirmay on 29.06.25.
-//
-
-
-// AudioPlaybackView.swift
 import SwiftUI
-import AVFoundation // For TimeInterval
+import AVFoundation
+import CoreData
 
 struct AudioPlaybackView: View {
-    @Environment(\.dismiss) var dismiss // To dismiss the sheet
-    @ObservedObject var viewModel: AudioPlaybackViewModel
-    @FetchRequest var soundEvents: FetchedResults<SoundEvent> // Fetched for markers
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject var viewModel: AudioPlaybackViewModel // The viewModel will be our delegate
 
-    // We pass the name of the audio file to load
-    let audioFileName: String?
+    // MARK: - State and FetchRequests
+    @State private var selectedSessionID: UUID? {
+        didSet {
+            // print("Selected Session ID changed to: \(selectedSessionID?.uuidString ?? "nil")")
+        }
+    }
+    @State private var selectedRecordingSession: RecordingSession?
 
-    // Initialize the FetchRequest dynamically
-    init(viewModel: AudioPlaybackViewModel, audioFileName: String?) {
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: false)],
+        animation: .default
+    ) var allRecordingSessions: FetchedResults<RecordingSession>
+
+    // No longer need @FetchRequest var soundEvents: FetchedResults<SoundEvent> here
+    // as it's now managed by SoundEventListView's initializer.
+
+    // MARK: - Initializer
+    // Remove the _soundEvents initialization from here, it's in SoundEventListView now.
+    init(viewModel: AudioPlaybackViewModel) {
         self.viewModel = viewModel
-        self.audioFileName = audioFileName
-
-        // Fetch SoundEvents associated with this specific audio file, sorted by timestamp
-        _soundEvents = FetchRequest(
-            sortDescriptors: [NSSortDescriptor(keyPath: \SoundEvent.timestamp, ascending: true)],
-            predicate: NSPredicate(format: "audioFileName == %@", audioFileName ?? "NONE"), // Filter by audio file name
-            animation: .default
-        )
+        // _soundEvents = FetchRequest... (This line is no longer needed here)
     }
 
-    // Date formatter for display purposes
+    // MARK: - Date Formatters
     static let timeFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute, .second]
@@ -40,169 +39,181 @@ struct AudioPlaybackView: View {
         return formatter
     }()
 
+    static let sessionDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
+    // MARK: - Body
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Text(audioFileName != nil ? "Playing: \(audioFileName!)" : "No Audio File Selected")
-                    .font(.headline)
+                // MARK: - Session Selector (Picker)
+                Picker("Select Recording", selection: $selectedSessionID) {
+                    Text("Select a Session").tag(nil as UUID?)
 
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .font(.callout)
-                }
-
-                // MARK: - Playback Controls
-                HStack {
-                    Button(action: { viewModel.togglePlayback() }) {
-                        Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.largeTitle)
-                    }
-                    .disabled(viewModel.duration == 0) // Disable if no audio loaded
-
-                    Slider(value: $viewModel.currentTime, in: 0...viewModel.duration) { editing in
-                        if !editing {
-                            viewModel.seek(to: viewModel.currentTime)
+                    ForEach(allRecordingSessions) { session in
+                        if let id = session.id, let startTime = session.startTime {
+                            Text(session.title ?? AudioPlaybackView.sessionDateFormatter.string(from: startTime))
+                                .tag(id as UUID?)
                         }
                     }
-                    .disabled(viewModel.duration == 0)
-
-                    Text(Self.timeFormatter.string(from: viewModel.currentTime) ?? "00:00")
-                        .font(.caption)
-                    Text("/")
-                    Text(Self.timeFormatter.string(from: viewModel.duration) ?? "00:00")
-                        .font(.caption)
                 }
+                .pickerStyle(.menu)
                 .padding(.horizontal)
-
-                // MARK: - Visual Timeline / Waveform (Conceptual)
-                // This is a simplified visual representation.
-                // A real waveform would involve parsing PCM data.
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Timeline with Events")
-                        .font(.subheadline)
-                        .padding(.leading)
-
-                    ZStack(alignment: .leading) {
-                        // Background line representing the full duration
-                        Capsule()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 10)
-
-                        // Progress indicator
-                        GeometryReader { geometry in
-                            Capsule()
-                                .fill(Color.blue)
-                                .frame(width: max(0, CGFloat(viewModel.currentTime / viewModel.duration) * geometry.size.width), height: 10)
-                        }
-
-                        // Markers for sound events
-                        GeometryReader { geometry in
-                            ForEach(soundEvents) { event in
-                                if let timestamp = event.timestamp {
-                                    // Calculate position based on timestamp relative to recording start
-                                    // This assumes `timestamp` is relative to the start of the audio file.
-                                    // If `timestamp` is absolute (e.g., Date()), you need the audio file's
-                                    // actual start time to calculate relative position.
-                                    let relativeTime = timestamp.timeIntervalSinceReferenceDate - (soundEvents.first?.timestamp?.timeIntervalSinceReferenceDate ?? timestamp.timeIntervalSinceReferenceDate) // Adjust if events don't start at 0
-                                    let position = CGFloat(relativeTime / viewModel.duration) * geometry.size.width
-
-                                    if position >= 0 && position <= geometry.size.width {
-                                        VStack {
-                                            Circle()
-                                                .fill(markerColor(for: event.name))
-                                                .frame(width: 15, height: 15)
-                                                .overlay(Circle().stroke(Color.white, lineWidth: 1))
-                                            Text(event.name ?? "Event")
-                                                .font(.caption2)
-                                                .lineLimit(1)
-                                        }
-                                        .offset(x: position - 7.5) // Center the circle
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .frame(height: 50) // Adjust height for timeline area
-                    .padding(.horizontal)
+                .onChange(of: selectedSessionID) { oldValue, newID in
+                    updateSelectedSessionAndLoadAudio(for: newID)
                 }
 
-                // MARK: - Event List for detailed view and selection
-                List {
-                    Section("Detected Events") {
-                        if soundEvents.isEmpty {
-                            Text("No detected events for this recording.")
-                                .foregroundColor(.gray)
-                        } else {
-                            ForEach(soundEvents) { event in
-                                Button(action: {
-                                    // Calculate time to seek to (relative to start of recording)
-                                    if let firstTimestamp = soundEvents.first?.timestamp,
-                                       let eventTimestamp = event.timestamp {
-                                        let seekTime = eventTimestamp.timeIntervalSince(firstTimestamp)
-                                        viewModel.seek(to: max(0, seekTime)) // Ensure not negative
-                                        viewModel.togglePlayback() // Play from marker
-                                    }
-                                }) {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(event.name ?? "Unknown Event")
-                                                .font(.headline)
-                                                .foregroundColor(.primary)
-                                            Text("Confidence: \(event.confidence, specifier: "%.2f")%")
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
-                                            Text("Time: \(Self.timeFormatter.string(from: event.timestamp?.timeIntervalSinceReferenceDate ?? 0) ?? "N/A")")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                            // TODO: If you add 'duration' to SoundEvent, display it here
-                                            // Text("Duration: \(event.duration, specifier: "%.1f")s")
-                                        }
-                                        Spacer()
-                                        Image(systemName: "play.circle.fill")
-                                            .foregroundColor(.accentColor)
+                // MARK: - Playback UI
+                if selectedRecordingSession == nil {
+                    ContentUnavailableView("No Session Selected", systemImage: "music.note", description: Text("Please select a recorded session from the dropdown above to view its audio and events."))
+                } else {
+                    Text(selectedRecordingSession?.title ?? selectedRecordingSession?.audioFileName ?? "Unnamed Recording")
+                        .font(.headline)
+
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.callout)
+                    }
+
+                    HStack {
+                        Button(action: { viewModel.togglePlayback() }) {
+                            Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.largeTitle)
+                        }
+                        .disabled(viewModel.duration == 0)
+                        .accessibilityLabel(viewModel.isPlaying ? "Pause playback" : "Play audio")
+
+
+                        Slider(value: $viewModel.currentTime, in: 0...viewModel.duration) { editing in
+                            if !editing {
+                                viewModel.seek(to: viewModel.currentTime)
+                            }
+                        }
+                        .disabled(viewModel.duration == 0)
+                        .accessibilityLabel("Audio playback progress")
+                        .accessibilityValue(Self.timeFormatter.string(from: viewModel.currentTime) ?? "0 seconds")
+                        .accessibilityInputLabels(["Seek audio"])
+
+                        Text(Self.timeFormatter.string(from: viewModel.currentTime) ?? "00:00")
+                            .font(.caption)
+                        Text("/")
+                        Text(Self.timeFormatter.string(from: viewModel.duration) ?? "00:00")
+                            .font(.caption)
+                    }
+                    .padding(.horizontal)
+
+                    // MARK: - Visual Timeline / Waveform (Conceptual)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Timeline with Events")
+                            .font(.subheadline)
+                            .padding(.leading)
+
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(height: 10)
+
+                            GeometryReader { geometry in
+                                Capsule()
+                                    .fill(Color.blue)
+                                    .frame(width: max(0, CGFloat(viewModel.currentTime / viewModel.duration) * geometry.size.width), height: 10)
+                            }
+
+                            GeometryReader { geometry in
+                                // Still need to decide how to pass soundEvents for EventMarker
+                                // Option 1: Pass selectedRecordingSession.soundEvents (if relationship is to-many and ordered)
+                                // Option 2: Keep a @FetchRequest here only for EventMarker
+                                // For now, let's assume `soundEvents` is available via selectedRecordingSession
+                                // Or better, pass the predicate to EventMarker directly if it also uses @FetchRequest
+                                if let session = selectedRecordingSession,
+                                   let events = session.events as? Set<SoundEvent> {
+                                    // Convert Set to Array and sort if necessary for consistent display order
+                                    let sortedEvents = Array(events).sorted { ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast) }
+
+                                    ForEach(sortedEvents) { event in
+                                        EventMarker(event: event,
+                                                    selectedRecordingSession: selectedRecordingSession,
+                                                    viewModel: viewModel, // ViewModel here will directly update current time
+                                                    timelineWidth: geometry.size.width,
+                                                    audioDuration: viewModel.duration)
                                     }
                                 }
                             }
                         }
+                        .frame(height: 50)
+                        .padding(.horizontal)
                     }
+
+                    // MARK: - Event List for detailed view and selection
+                    // Use the new SoundEventListView here!
+                    // Pass the selected session and the viewModel as the delegate.
+                    SoundEventListView(session: selectedRecordingSession, playbackDelegate: viewModel)
+                        // Make sure to add .environment(\.managedObjectContext, viewContext)
+                        // if SoundEventListView also needs access to the context for its @FetchRequest
+                        .environment(\.managedObjectContext, viewContext)
                 }
 
                 Spacer()
             }
-            .navigationTitle("Recording Playback")
+            .navigationTitle("Audio Playback")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItemGroup(placement: .topBarLeading) {
                     Button("Done") {
-                        viewModel.stopPlayback() // Stop playback before dismissing
+                        viewModel.stopPlayback()
                         dismiss()
                     }
                 }
             }
             .onAppear {
-                if let fileName = audioFileName {
-                    viewModel.loadAudio(fileName: fileName)
-                } else {
-                    viewModel.errorMessage = "No audio file name provided."
+                if selectedSessionID == nil {
+                    if let mostRecentSession = allRecordingSessions.first {
+                        selectedSessionID = mostRecentSession.id
+                    } else {
+                        viewModel.errorMessage = "No recording sessions found."
+                        selectedRecordingSession = nil
+                        // updateSoundEventsPredicate(for: nil) // No longer needed here
+                        viewModel.unloadAudio()
+                    }
+                } else if let id = selectedSessionID {
+                    updateSelectedSessionAndLoadAudio(for: id)
                 }
             }
             .onDisappear {
-                viewModel.stopPlayback() // Stop playback when view disappears
+                viewModel.stopPlayback()
             }
         }
     }
 
-    func markerColor(for eventName: String?) -> Color {
-        switch eventName?.lowercased() {
-        case "snoring", "snoring (speech-like)", "snoring (noise/breathing)": // Use your actual detected names
-            return .red
-        case "quiet", "silence":
-            return .green
-        case "speech":
-            return .blue
-        default:
-            return .purple // For "other noises" or unknown
+    // MARK: - Helper Functions
+    private func updateSelectedSessionAndLoadAudio(for id: UUID?) {
+        viewModel.stopPlayback()
+
+        if let sessionID = id,
+           let session = allRecordingSessions.first(where: { $0.id == sessionID }) {
+            selectedRecordingSession = session
+            // No need to update _soundEvents.wrappedValue.nsPredicate here
+            // as SoundEventListView's init handles it directly.
+
+            if let audioFileName = session.audioFileName {
+                viewModel.loadAudio(fileName: audioFileName)
+            } else {
+                viewModel.errorMessage = "Audio file not found for this session."
+                viewModel.duration = 0
+            }
+        } else {
+            selectedRecordingSession = nil
+            // No need to update _soundEvents.wrappedValue.nsPredicate here
+            viewModel.unloadAudio()
+            viewModel.errorMessage = nil
         }
     }
+
+    // This function is no longer needed in AudioPlaybackView
+    // private func updateSoundEventsPredicate(for sessionID: UUID?) { ... }
 }

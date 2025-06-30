@@ -41,7 +41,8 @@ class ViewController: UIViewController {
     // Add a property to store the current recording file name
     private var currentSessionAudioFileName: String? // To track the current recording file
     private var currentSessionStartTime: Date? // NEW: Track session start time
-
+    // CHANGED: Now holds the current RecordingSession object
+    private var currentRecordingSession: RecordingSession?
 
     
     // Add a property to hold the AVAudioEngine
@@ -149,156 +150,182 @@ class ViewController: UIViewController {
     // MARK: - Audio Analysis Control
 
     private func startAudioAnalysis() {
-           guard audioStreamAnalyzer == nil else {
-               updateResultsTextView(with: "Audio analysis is already running. \n")
-               return
-           }
+            guard audioStreamAnalyzer == nil else {
+                updateResultsTextView(with: "Audio analysis is already running. \n")
+                return
+            }
 
-           updateResultsTextView(with: "Starting audio analysis... \n", append: false)
+            updateResultsTextView(with: "Starting audio analysis... \n", append: false)
 
-           do {
-               try audioManager.setupAudioSessionForRecording(
-                   category: .playAndRecord,
-                   mode: .measurement,
-                   options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers]
-               )
+            do {
+                try audioManager.setupAudioSessionForRecording(
+                    category: .playAndRecord,
+                    mode: .measurement,
+                    options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers]
+                )
+
+                // 1. Create a new RecordingSession object
+                let context = PersistenceController.shared.container.viewContext
+                let newSession = RecordingSession(context: context)
+                newSession.id = UUID()
+                newSession.startTime = Date()
+
 
                if let initialRecordingURL = try audioRecorder.startAndGetRecordingURL() {
-                   self.currentSessionAudioFileName = initialRecordingURL.lastPathComponent
-                   self.currentSessionStartTime = Date() // Record the start time
-                   resultsObserver.currentRecordingFileName = self.currentSessionAudioFileName
-                   print("Recording session started for file: \(self.currentSessionAudioFileName ?? "N/A")")
+                   newSession.audioFileName = initialRecordingURL.lastPathComponent
+                   // Generate a simple title for the session
+                   let dateFormatter = DateFormatter()
+                   dateFormatter.dateFormat = "MMM d, h:mm a"
+                   
+                   // Use optional binding to safely unwrap startTime
+                   if let startTime = newSession.startTime {
+                       newSession.title = "Session \(dateFormatter.string(from: startTime))"
+                   } else {
+                       // This case should ideally not happen immediately after setting startTime
+                       newSession.title = "Session (Unknown Time)"
+                   }
                } else {
                    throw AudioAnalysisError.requestCreationFailed(NSError(domain: "ViewController", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to obtain initial recording URL."]))
                }
 
-               let newAudioEngine = AVAudioEngine()
-               let inputNode = newAudioEngine.inputNode
-               let recordingFormat = inputNode.outputFormat(forBus: 0)
+                self.currentRecordingSession = newSession // Store the new session
+                resultsObserver.currentRecordingSession = newSession // Pass to the observer
 
-               audioStreamAnalyzer = SNAudioStreamAnalyzer(format: recordingFormat)
+                print("Recording session started for file: \(newSession.audioFileName ?? ("udefined filename"))")
 
-               guard let analyzer = audioStreamAnalyzer, let request = soundClassifierRequest else {
-                   let errorMessage = "Error: Failed to initialize audio stream analyzer or sound classifier request."
-                   print(errorMessage)
-                   updateResultsTextView(with: errorMessage)
-                   stopAudioAnalysis()
-                   return
-               }
 
-               let bufferSize = AVAudioFrameCount(2048)
-               inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
-                   guard let self = self, let analyzer = self.audioStreamAnalyzer else { return }
-                   self.analysisQueue.async {
-                       analyzer.analyze(buffer, atAudioFramePosition: when.sampleTime)
-                   }
-               }
+                let newAudioEngine = AVAudioEngine()
+                let inputNode = newAudioEngine.inputNode
+                let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-               try analyzer.add(request, withObserver: resultsObserver)
-               try newAudioEngine.start()
-               print("Audio engine started.")
-               self.audioEngine = newAudioEngine
-               updateResultsTextView(with: "Analysis started.\n")
+                audioStreamAnalyzer = SNAudioStreamAnalyzer(format: recordingFormat)
 
-           } catch let error as AudioAnalysisError {
-               print("Audio analysis setup failed: \(error.localizedDescription)")
-               updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-               stopAudioAnalysis()
-           } catch {
-               print("Audio analysis setup failed with generic error: \(error.localizedDescription)")
-               updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-               stopAudioAnalysis()
-           }
-       }
+                guard let analyzer = audioStreamAnalyzer, let request = soundClassifierRequest else {
+                    let errorMessage = "Error: Failed to initialize audio stream analyzer or sound classifier request."
+                    print(errorMessage)
+                    updateResultsTextView(with: errorMessage)
+                    stopAudioAnalysis()
+                    return
+                }
 
-       private func stopAudioAnalysis() {
-           if let inputNode = audioEngine?.inputNode {
-               inputNode.removeTap(onBus: 0)
-           }
-           audioEngine?.stop()
-           audioEngine = nil
+                let bufferSize = AVAudioFrameCount(2048)
+                inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
+                    guard let self = self, let analyzer = self.audioStreamAnalyzer else { return }
+                    self.analysisQueue.async {
+                        analyzer.analyze(buffer, atAudioFramePosition: when.sampleTime)
+                    }
+                }
 
-           audioStreamAnalyzer?.removeAllRequests()
-           audioStreamAnalyzer = nil
-           resultsObserver.currentRecordingFileName = nil
+                try analyzer.add(request, withObserver: resultsObserver)
+                try newAudioEngine.start()
+                print("Audio engine started.")
+                self.audioEngine = newAudioEngine
+                updateResultsTextView(with: "Analysis started.\n")
 
-           // Get the final URL from the recorder
-           _ = audioRecorder.stopAndGetRecordingURL()
+            } catch let error as AudioAnalysisError {
+                print("Audio analysis setup failed: \(error.localizedDescription)")
+                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
+                stopAudioAnalysis()
+            } catch {
+                print("Audio analysis setup failed with generic error: \(error.localizedDescription)")
+                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
+                stopAudioAnalysis()
+            }
+        }
 
-           // NEW: Save the RecordingSession Core Data entity
-           if let fileName = self.currentSessionAudioFileName,
-              let startTime = self.currentSessionStartTime {
-               let endTime = Date()
-               let context = PersistenceController.shared.container.viewContext
-               let newSession = RecordingSession(context: context)
-               newSession.id = UUID()
-               newSession.startTime = startTime
-               newSession.endTime = endTime
-               newSession.audioFileName = fileName
-               PersistenceController.shared.save()
-               print("Saved Recording Session: \(fileName) from \(startTime) to \(endTime)")
-           } else {
-               print("Warning: Could not save RecordingSession. File name or start time missing.")
-           }
+        private func stopAudioAnalysis() {
+            if let inputNode = audioEngine?.inputNode {
+                inputNode.removeTap(onBus: 0)
+            }
+            audioEngine?.stop()
+            audioEngine = nil
 
-           self.currentSessionAudioFileName = nil
-           self.currentSessionStartTime = nil // Clear current session data
+            audioStreamAnalyzer?.removeAllRequests()
+            audioStreamAnalyzer = nil
+            resultsObserver.currentRecordingSession = nil // Clear session from observer
 
-           updateResultsTextView(with: "Analysis stopped.\n")
-           analysisButton?.setTitle("Start Analysis", for: .normal)
-       }
+            _ = audioRecorder.stopAndGetRecordingURL() // Stop the audio recording file
 
-       @IBAction func toggleAnalysis(_ sender: UIButton) {
-           if audioStreamAnalyzer == nil {
-               startAudioAnalysis()
-               sender.setTitle("Stop Analysis", for: .normal) // Moved here for immediate update
-           } else {
-               stopAudioAnalysis()
-               sender.setTitle("Start Analysis", for: .normal) // Moved here for immediate update
-           }
-       }
+            // 2. Set endTime for the current session and save it
+            if let session = self.currentRecordingSession {
+                session.endTime = Date()
+                PersistenceController.shared.save() // Save the session (and its related events)
+                print("Saved Recording Session: \(session.title ?? session.id?.uuidString ?? "N/A")")
+            } else {
+                print("Warning: No currentRecordingSession to save.")
+            }
 
-    // NEW: Action to show the chart view (already corrected in previous response)
+            self.currentRecordingSession = nil // Clear current session from ViewController
+
+            updateResultsTextView(with: "Analysis stopped.\n")
+            analysisButton?.setTitle("Start Analysis", for: .normal)
+        }
+
+        @IBAction func toggleAnalysis(_ sender: UIButton) {
+            if audioStreamAnalyzer == nil {
+                startAudioAnalysis()
+                sender.setTitle("Stop Analysis", for: .normal)
+            } else {
+                stopAudioAnalysis()
+                sender.setTitle("Start Analysis", for: .normal)
+            }
+        }
+
     @IBAction func showSoundChart(_ sender: UIButton) {
         let managedObjectContext = PersistenceController.shared.container.viewContext
-        let chartView = SnoreDoctorChartView()
-            .environment(\.managedObjectContext, managedObjectContext)
+
+        // Determine live session status and ID
+        let isCurrentSessionRecording = (self.currentRecordingSession != nil && self.audioStreamAnalyzer != nil)
+        let currentLiveSessionID = self.currentRecordingSession?.id
+
+        // Initialize SnoreDoctorChartView.
+        // If you want to initially show the live session, pass currentLiveSessionID.
+        // If you want to initially show the *last* recorded session, you'd need to fetch it here.
+        // For simplicity, let's say we always try to show live first if active, otherwise no initial selection.
+        let initialChartSessionID: UUID?
+        if isCurrentSessionRecording {
+            initialChartSessionID = currentLiveSessionID
+        } else {
+            initialChartSessionID = nil // Or fetch the ID of the most recent past session here if desired
+        }
+
+        let chartView = SnoreDoctorChartView(
+            initialSessionID: initialChartSessionID,
+            isLiveSessionActive: isCurrentSessionRecording,
+            currentLiveSessionID: currentLiveSessionID
+        )
+        .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: chartView)
         self.present(hostingController, animated: true, completion: nil)
     }
-    
-    
-    
-    // MARK: - New Action to show playback view
-       @IBAction func showPlaybackView(_ sender: UIButton) {
-           // Link this to a new button in your Storyboard
-           guard let lastRecordedFileName = currentSessionAudioFileName else {
-               showAlert(title: "No Recording", message: "Please record an audio session first.")
-               return
-           }
 
-           let audioPlaybackVM = AudioPlaybackViewModel()
+
+    @IBAction func showPlaybackView(_ sender: UIButton) {
            let managedObjectContext = PersistenceController.shared.container.viewContext
 
-           let playbackView = AudioPlaybackView(viewModel: audioPlaybackVM, audioFileName: lastRecordedFileName)
-               .environment(\.managedObjectContext, managedObjectContext)
+           let audioPlaybackViewModel = AudioPlaybackViewModel()
 
-           let hostingController = UIHostingController(rootView: playbackView)
+           // Create the SwiftUI view
+           let audioPlaybackView = AudioPlaybackView(viewModel: audioPlaybackViewModel)
+
+           // Then apply the environment modifier explicitly
+           let hostedView = audioPlaybackView.environment(\.managedObjectContext, managedObjectContext)
+
+           // Pass the modified view to UIHostingController
+           let hostingController = UIHostingController(rootView: hostedView)
            self.present(hostingController, animated: true, completion: nil)
        }
 
     
-    // NEW: Action to show the Settings view
-       @IBAction func showSettings(_ sender: UIButton) {
-           let managedObjectContext = PersistenceController.shared.container.viewContext
-           let settingsView = SettingsView()
-               .environment(\.managedObjectContext, managedObjectContext)
+        @IBAction func showSettings(_ sender: UIButton) {
+            let managedObjectContext = PersistenceController.shared.container.viewContext
+            let settingsView = SettingsView()
+                .environment(\.managedObjectContext, managedObjectContext)
 
-           let hostingController = UIHostingController(rootView: settingsView)
-           self.present(hostingController, animated: true, completion: nil)
-       }
-
+            let hostingController = UIHostingController(rootView: settingsView)
+            self.present(hostingController, animated: true, completion: nil)
+        }
     
     // MARK: - SNResultsObserving Delegate (from SnoreDoctorObserver)
 
@@ -325,93 +352,6 @@ protocol SnoreDoctorObserverDelegate: AnyObject { // Use AnyObject for weak refe
     // Potentially add more methods for progress updates, etc.
 }
 
-class SnoreDoctorObserver: NSObject, SNResultsObserving {
-    weak var delegate: SnoreDoctorObserverDelegate?
-    private let soundDataManager = SoundDataManager()
-
-    // NEW: Property to hold the current audio file name
-    var currentRecordingFileName: String?
-
-    init(delegate: SnoreDoctorObserverDelegate?) {
-        self.delegate = delegate
-    }
-
-    func request(_ request: SNRequest, didProduce result: SNResult) {
-           print("SnoreDoctorObserver - Received a result")
-
-           guard let classificationResult = result as? SNClassificationResult else { return }
-
-           var detectedSnoreEvent: (identifier: String, confidence: Double)? = nil
-
-           let eventDuration: Double
-           if let classifyRequest = request as? SNClassifySoundRequest {
-               eventDuration = classifyRequest.windowDuration.seconds
-           } else {
-               eventDuration = 1.0
-               print("Warning: Request is not an SNClassifySoundRequest or windowDuration not available. Using default duration.")
-           }
-
-           // NEW: Get the confidence threshold from UserDefaults
-           let requiredConfidence = UserDefaults.standard.snoreConfidenceThreshold
-           // Fallback for safety, though @AppStorage usually sets a default
-           // if UserDefaults.standard.object(forKey: "snoreConfidenceThreshold") == nil {
-           //     requiredConfidence = AppSettings.defaultSnoreConfidenceThreshold
-           // }
-
-
-           if let topClassification = classificationResult.classifications.first {
-               // Your custom snore detection logic goes here.
-               // ... (rest of your snore detection logic based on identifier and confidence) ...
-               // Apply the configurable threshold
-               if topClassification.confidence > requiredConfidence {
-                   detectedSnoreEvent = (topClassification.identifier, topClassification.confidence)
-               }
-           } else {
-                // Handle cases where no classification is returned (e.g., pure silence, or model failed)
-                // You might want to save a "Silent" event with 100% confidence here
-                // if no classification means silence.
-               detectedSnoreEvent = ("Silence", 1.0) // Assume silence if no classification
-           }
-
-           if let (identifier, confidenceValue) = detectedSnoreEvent {
-               let confidence = String(format: "%.2f", confidenceValue * 100)
-               let outputString = "Detected: \(identifier) (Confidence: \(confidence)%)\n"
-
-               DispatchQueue.main.async {
-                   self.delegate?.didDetectSoundEvent(logString: outputString)
-
-                   if let fileName = self.currentRecordingFileName {
-                       self.soundDataManager.saveSnoreDoctorResult(
-                           logString: outputString.trimmingCharacters(in: .whitespacesAndNewlines),
-                           audioFileName: fileName,
-                           duration: eventDuration
-                       )
-                   } else {
-                       print("Warning: currentRecordingFileName is nil. SoundEvent not associated with a file.")
-                       self.soundDataManager.saveSnoreDoctorResult(
-                           logString: outputString.trimmingCharacters(in: .whitespacesAndNewlines),
-                           audioFileName: "unknown_recording",
-                           duration: eventDuration
-                       )
-                   }
-               }
-           }
-       }
-
-    func request(_ request: SNRequest, didFailWithError error: Error) {
-        print("Sound analysis failed with error: \(error)")
-        DispatchQueue.main.async {
-            self.delegate?.analysisDidFail(error: error)
-        }
-    }
-
-    func requestDidComplete(_ request: SNRequest) {
-        print("Sound analysis request completed.")
-        DispatchQueue.main.async {
-            self.delegate?.analysisDidComplete()
-        }
-    }
-}
 
 // MARK: - SnoreDoctorObserverDelegate Extension for ViewController
 extension ViewController: SnoreDoctorObserverDelegate {

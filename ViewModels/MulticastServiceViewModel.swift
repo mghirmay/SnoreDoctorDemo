@@ -91,7 +91,7 @@ class MulticastServiceViewModel: ObservableObject {
 
            // NEW: Callback for incoming data
         client.onDataReceived = { [weak self] data, senderEndpoint in
-                   guard let self = self else { return }
+            guard self != nil else { return }
                    print("[ViewModel] Received data from \(senderEndpoint.debugDescription): \(data.count) bytes.")
                    
                    do {

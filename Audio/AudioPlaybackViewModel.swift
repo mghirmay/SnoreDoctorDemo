@@ -1,132 +1,113 @@
-//
-//  AudioPlaybackViewModel.swift
-//  SnoreDoctorDemo
-//
-//  Created by musie Ghirmay on 29.06.25.
-//
-
-
-// AudioPlaybackViewModel.swift
+// AudioPlaybackViewModel.swift (Example structure)
 import Foundation
 import AVFoundation
-import Combine
 
-class AudioPlaybackViewModel: NSObject, ObservableObject {
+class AudioPlaybackViewModel: ObservableObject, SoundEventPlaybackDelegate { // Conforms here
     @Published var isPlaying: Bool = false
     @Published var currentTime: TimeInterval = 0.0
     @Published var duration: TimeInterval = 0.0
-    @Published var errorMessage: String? = nil
+    @Published var errorMessage: String?
 
-    private var player: AVPlayer?
-    private var timeObserverToken: Any?
+    private var audioPlayer: AVAudioPlayer?
+    private var displayLink: CADisplayLink? // For updating currentTime
 
-    // Combine for observing audio events
-    private var cancellables = Set<AnyCancellable>()
-
-    override init() {
-        super.init()
-        // Observe AVPlayerItemDidPlayToEndTime notification
-        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    self.isPlaying = false
-                    self.player?.seek(to: .zero) // Reset to beginning
-                    self.currentTime = 0.0
-                }
-            }
-            .store(in: &cancellables)
+    // MARK: - SoundEventPlaybackDelegate Conformance
+    func seek(to time: TimeInterval) {
+        guard let player = audioPlayer else { return }
+        player.currentTime = min(max(0, time), duration)
+        currentTime = player.currentTime
     }
 
-    deinit {
-        removeTimeObserver()
-        player?.pause()
-        cancellables.forEach { $0.cancel() }
-    }
-
-    func loadAudio(fileName: String) {
-        // Stop any existing playback
-        stopPlayback()
-
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let audioURL = documentsDirectory.appendingPathComponent(fileName)
-
-        guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            errorMessage = "Audio file not found: \(fileName)"
-            print("Error: Audio file not found at \(audioURL.path)")
-            return
+    func play() {
+        guard let player = audioPlayer else { return }
+        if !player.isPlaying {
+            player.play()
+            isPlaying = true
+            startUpdatingPlaybackTime()
         }
+    }
 
-        let playerItem = AVPlayerItem(url: audioURL)
-        player = AVPlayer(playerItem: playerItem)
-
-        // Observe duration
-        player?.currentItem?.publisher(for: \.duration)
-            .compactMap { $0.isValid ? $0.seconds : nil }
-            .sink { [weak self] newDuration in
-                DispatchQueue.main.async {
-                    self?.duration = newDuration
-                    self?.errorMessage = nil // Clear error if successful
-                }
-            }
-            .store(in: &cancellables)
-
-        // Add time observer to update current playback time
-        addTimeObserver()
+    func pause() { // Add pause if you need it for the delegate
+        guard let player = audioPlayer else { return }
+        if player.isPlaying {
+            player.pause()
+            isPlaying = false
+            stopUpdatingPlaybackTime()
+        }
     }
 
     func togglePlayback() {
-        guard let player = player else {
-            errorMessage = "No audio loaded."
-            return
-        }
-
         if isPlaying {
-            player.pause()
-            isPlaying = false
-            print("Paused playback at \(currentTime) / \(duration)")
+            pause()
         } else {
-            player.play()
-            isPlaying = true
-            print("Started playback from \(currentTime) / \(duration)")
+            play()
         }
     }
 
     func stopPlayback() {
-        player?.pause()
-        player = nil
+        audioPlayer?.stop()
         isPlaying = false
         currentTime = 0.0
-        duration = 0.0
-        removeTimeObserver()
-        errorMessage = nil
-        print("Stopped playback and reset.")
+        stopUpdatingPlaybackTime()
     }
 
-    func seek(to time: TimeInterval) {
-        guard let player = player, time >= 0, time <= duration else { return }
-        let newTime = CMTime(seconds: time, preferredTimescale: 1000)
-        player.seek(to: newTime) { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.currentTime = time
+    func loadAudio(fileName: String) {
+        stopPlayback() // Stop any current playback
+
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            errorMessage = "Could not find documents directory."
+            return
+        }
+        let audioFileURL = documentsDirectory.appendingPathComponent(fileName)
+
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.prepareToPlay()
+            duration = audioPlayer?.duration ?? 0.0
+            currentTime = 0.0 // Reset current time on new load
+            errorMessage = nil // Clear any previous error
+            print("Audio loaded: \(audioFileURL.lastPathComponent), Duration: \(duration) seconds")
+        } catch {
+            errorMessage = "Failed to load audio file: \(error.localizedDescription)"
+            duration = 0.0
+            print("Error loading audio: \(error.localizedDescription)")
+        }
+    }
+
+    func unloadAudio() {
+        stopPlayback()
+        audioPlayer = nil
+        duration = 0.0
+        currentTime = 0.0
+        errorMessage = nil
+    }
+
+    private func startUpdatingPlaybackTime() {
+        stopUpdatingPlaybackTime() // Ensure only one display link is active
+        displayLink = CADisplayLink(target: self, selector: #selector(updatePlaybackTime))
+        displayLink?.add(to: .current, forMode: .common)
+    }
+
+    private func stopUpdatingPlaybackTime() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+
+    @objc private func updatePlaybackTime() {
+        guard let player = audioPlayer else { return }
+        DispatchQueue.main.async {
+            self.currentTime = player.currentTime
+            if !player.isPlaying && self.currentTime >= self.duration {
+                // Playback finished
+                self.isPlaying = false
+                self.currentTime = self.duration // Ensure it shows full duration at end
+                self.stopUpdatingPlaybackTime()
             }
         }
     }
 
-    private func addTimeObserver() {
-        guard let player = player else { return }
-        // Update UI every 0.1 seconds
-        let interval = CMTime(seconds: 0.1, preferredTimescale: 1000)
-        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self else { return }
-            self.currentTime = time.seconds
-        }
-    }
-
-    private func removeTimeObserver() {
-        if let token = timeObserverToken {
-            player?.removeTimeObserver(token)
-            timeObserverToken = nil
-        }
+    deinit {
+        stopUpdatingPlaybackTime()
+        audioPlayer = nil
     }
 }

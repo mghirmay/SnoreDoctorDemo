@@ -9,12 +9,24 @@
 /* Begin PBXBuildFile section */
 		961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 961CD85D2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld */; };
 		961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */; };
+		962549B92E1217D300EAFF47 /* TestToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962549B82E1217D300EAFF47 /* TestToolbarView.swift */; };
+		966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */; };
+		966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */; };
 		968CD7812E119DA0009F5DB2 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7802E119DA0009F5DB2 /* AudioManager.swift */; };
 		968CD7832E119DC3009F5DB2 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7822E119DC3009F5DB2 /* AudioRecorder.swift */; };
-		968CD7852E11A0E9009F5DB2 /* AudioPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7842E11A0E9009F5DB2 /* AudioPlaybackViewModel.swift */; };
 		968CD7872E11A103009F5DB2 /* AudioPlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7862E11A103009F5DB2 /* AudioPlaybackView.swift */; };
 		968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7892E11AD68009F5DB2 /* SettingsView.swift */; };
 		968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD78D2E11B445009F5DB2 /* AppSettings.swift */; };
+		96BDA72B2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BDA72A2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift */; };
+		96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BDA72E2E12042D00DB5364 /* EventMarker.swift */; };
+		96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36432E122736001D8F43 /* SnoreDoctorChartView.swift */; };
+		96DA36672E122F70001D8F43 /* SoundEvent+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36662E122F69001D8F43 /* SoundEvent+Extensions.swift */; };
+		96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA366B2E123258001D8F43 /* ChartColorProvider.swift */; };
+		96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA366F2E123489001D8F43 /* SoundEventType.swift */; };
+		96DA36722E123550001D8F43 /* ChartViewContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36712E123550001D8F43 /* ChartViewContent.swift */; };
+		96DA36762E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */; };
+		96DA367C2E124039001D8F43 /* SoundEventPlaybackDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */; };
+		96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367D2E124072001D8F43 /* SoundEventListView.swift */; };
 		96DF26032DF725B6003498DA /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 96DF26022DF725B6003498DA /* MessagePack */; };
 /* End PBXBuildFile section */
 
@@ -38,15 +50,27 @@
 /* Begin PBXFileReference section */
 		961CD85E2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SnoreDoctorDataModel.xcdatamodel; sourceTree = "<group>"; };
 		961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SoundEvent+CoreDataClass.swift"; sourceTree = "<group>"; };
+		962549B82E1217D300EAFF47 /* TestToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolbarView.swift; sourceTree = "<group>"; };
+		966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecordingSession+CoreDataClass.swift"; sourceTree = "<group>"; };
+		966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SleepingSessions+CoreDataClass.swift"; sourceTree = "<group>"; };
 		968CD7802E119DA0009F5DB2 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		968CD7822E119DC3009F5DB2 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
-		968CD7842E11A0E9009F5DB2 /* AudioPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackViewModel.swift; sourceTree = "<group>"; };
 		968CD7862E11A103009F5DB2 /* AudioPlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackView.swift; sourceTree = "<group>"; };
 		968CD7892E11AD68009F5DB2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		968CD78D2E11B445009F5DB2 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		96B49EAC2DCFDB9200D779F9 /* SnoreDoctorDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnoreDoctorDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96B49EC22DCFDB9300D779F9 /* SnoreDoctorDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnoreDoctorDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96B49ECC2DCFDB9300D779F9 /* SnoreDoctorDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnoreDoctorDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		96BDA72A2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackViewModel.swift; sourceTree = "<group>"; };
+		96BDA72E2E12042D00DB5364 /* EventMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventMarker.swift; sourceTree = "<group>"; };
+		96DA36432E122736001D8F43 /* SnoreDoctorChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorChartView.swift; sourceTree = "<group>"; };
+		96DA36662E122F69001D8F43 /* SoundEvent+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SoundEvent+Extensions.swift"; sourceTree = "<group>"; };
+		96DA366B2E123258001D8F43 /* ChartColorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartColorProvider.swift; sourceTree = "<group>"; };
+		96DA366F2E123489001D8F43 /* SoundEventType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventType.swift; sourceTree = "<group>"; };
+		96DA36712E123550001D8F43 /* ChartViewContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewContent.swift; sourceTree = "<group>"; };
+		96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorPlaybackViewModel.swift; sourceTree = "<group>"; };
+		96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventPlaybackDelegate.swift; sourceTree = "<group>"; };
+		96DA367D2E124072001D8F43 /* SoundEventListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -124,7 +148,10 @@
 		961CD8882E0F5D3300542668 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				96DA36662E122F69001D8F43 /* SoundEvent+Extensions.swift */,
 				961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */,
+				966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */,
+				966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -132,8 +159,10 @@
 		968CD77F2E119D77009F5DB2 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				962549B82E1217D300EAFF47 /* TestToolbarView.swift */,
+				96BDA72E2E12042D00DB5364 /* EventMarker.swift */,
+				96BDA72A2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift */,
 				968CD7862E11A103009F5DB2 /* AudioPlaybackView.swift */,
-				968CD7842E11A0E9009F5DB2 /* AudioPlaybackViewModel.swift */,
 				968CD7802E119DA0009F5DB2 /* AudioManager.swift */,
 				968CD7822E119DC3009F5DB2 /* AudioRecorder.swift */,
 			);
@@ -152,6 +181,7 @@
 		96B49EA32DCFDB9200D779F9 = {
 			isa = PBXGroup;
 			children = (
+				96DA36682E1231FA001D8F43 /* Chart */,
 				968CD7882E11AD60009F5DB2 /* Settings */,
 				968CD77F2E119D77009F5DB2 /* Audio */,
 				961CD8882E0F5D3300542668 /* Models */,
@@ -174,6 +204,20 @@
 				96B49ECC2DCFDB9300D779F9 /* SnoreDoctorDemoUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		96DA36682E1231FA001D8F43 /* Chart */ = {
+			isa = PBXGroup;
+			children = (
+				96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */,
+				96DA36712E123550001D8F43 /* ChartViewContent.swift */,
+				96DA366F2E123489001D8F43 /* SoundEventType.swift */,
+				96DA366B2E123258001D8F43 /* ChartColorProvider.swift */,
+				96DA36432E122736001D8F43 /* SnoreDoctorChartView.swift */,
+				96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */,
+				96DA367D2E124072001D8F43 /* SoundEventListView.swift */,
+			);
+			path = Chart;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -327,13 +371,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				968CD7852E11A0E9009F5DB2 /* AudioPlaybackViewModel.swift in Sources */,
 				961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */,
+				96DA367C2E124039001D8F43 /* SoundEventPlaybackDelegate.swift in Sources */,
 				968CD7872E11A103009F5DB2 /* AudioPlaybackView.swift in Sources */,
+				966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */,
+				96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */,
+				96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */,
+				966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */,
+				96BDA72B2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift in Sources */,
 				961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */,
+				96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */,
+				96DA36762E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift in Sources */,
+				96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */,
+				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
 				968CD7812E119DA0009F5DB2 /* AudioManager.swift in Sources */,
 				968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */,
+				96DA36672E122F70001D8F43 /* SoundEvent+Extensions.swift in Sources */,
 				968CD7832E119DC3009F5DB2 /* AudioRecorder.swift in Sources */,
+				96DA36722E123550001D8F43 /* ChartViewContent.swift in Sources */,
+				962549B92E1217D300EAFF47 /* TestToolbarView.swift in Sources */,
 				968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -375,7 +431,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TZ674QWHG3;
+				DEVELOPMENT_TEAM = REN224BC53;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -407,7 +463,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TZ674QWHG3;
+				DEVELOPMENT_TEAM = REN224BC53;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -484,7 +540,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -541,7 +597,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

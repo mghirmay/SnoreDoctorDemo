@@ -8,6 +8,14 @@
 // SettingsView.swift
 import SwiftUI
 import CoreData
+import AVFoundation // Make sure to import AVFoundation for the audio setting constants if not already
+
+
+// Your existing AppSettings struct
+struct AppSettings {
+    static let defaultSnoreConfidenceThreshold: Double = 0.6
+}
+
 
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
@@ -17,21 +25,26 @@ struct SettingsView: View {
     @State private var clearDataSuccess = false
     @State private var clearDataErrorMessage: String?
 
-    // NEW: @AppStorage for the confidence threshold
-    // This links directly to UserDefaults.
+    // Existing: @AppStorage for the confidence threshold
     @AppStorage("snoreConfidenceThreshold") var confidenceThreshold: Double = AppSettings.defaultSnoreConfidenceThreshold
+
+    // --- NEW: @AppStorage for Audio Recording Settings ---
+    @AppStorage("audioFormatPreference") var selectedAudioFormat: UserDefaults.AudioFormat = .aac
+    @AppStorage("sampleRatePreference") var selectedSampleRate: Double = 44100.0
+    @AppStorage("audioQualityPreference") var selectedAudioQuality: UserDefaults.AudioRecordingQuality = .high
+    // ----------------------------------------------------
 
     var body: some View {
         NavigationView {
             Form {
-                Section("Analysis Settings") { // New section for settings
+                Section("Analysis Settings") {
                     VStack(alignment: .leading) {
                         Text("Detection Confidence Threshold")
                             .font(.headline)
                         Text(String(format: "Requires > %.1f%% Confidence", confidenceThreshold * 100))
                             .font(.subheadline)
                             .foregroundColor(.gray)
-                        Slider(value: $confidenceThreshold, in: 0.0...1.0, step: 0.05) { // Slider from 0.0 to 1.0
+                        Slider(value: $confidenceThreshold, in: 0.0...1.0, step: 0.05) {
                             Text("Threshold")
                         } minimumValueLabel: {
                             Text("0%")
@@ -39,8 +52,41 @@ struct SettingsView: View {
                             Text("100%")
                         }
                     }
-                    .padding(.vertical, 5) // Add some padding around the slider
+                    .padding(.vertical, 5)
                 }
+
+                // --- NEW Section: Audio Recording Quality ---
+                Section("Audio Recording Quality") {
+                    Picker("Format", selection: $selectedAudioFormat) {
+                        ForEach(UserDefaults.AudioFormat.allCases) { format in
+                            Text(format.rawValue).tag(format)
+                        }
+                    }
+                    .pickerStyle(.menu) // or .segmented for fewer options, or .wheel
+
+                    VStack(alignment: .leading) {
+                        Text("Sample Rate: \(Int(selectedSampleRate)) Hz")
+                        Slider(value: $selectedSampleRate, in: 16000.0...48000.0, step: 8000.0) { // Common sample rates
+                            Text("Sample Rate")
+                        } minimumValueLabel: {
+                            Text("16kHz")
+                        } maximumValueLabel: {
+                            Text("48kHz")
+                        }
+                    }
+                    
+                    Picker("Quality", selection: $selectedAudioQuality) {
+                        ForEach(UserDefaults.AudioRecordingQuality.allCases) { quality in
+                            Text(quality.rawValue).tag(quality)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    
+                    Text("Higher quality/sample rate leads to larger file sizes and potentially more CPU usage during recording. PCM is uncompressed.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                // ---------------------------------------------
 
                 Section("Data Management") {
                     Button("Clear All Recorded Data") {
@@ -74,24 +120,33 @@ struct SettingsView: View {
                 Text("This action cannot be undone. All recorded sound events and session data will be permanently deleted.")
             }
             .onAppear {
-                // Ensure the @AppStorage variable is initialized from UserDefaults on appear
-                // This is generally handled automatically by @AppStorage, but a small check never hurts.
+                // Ensure @AppStorage variables are initialized with default values if not already set.
+                // @AppStorage handles this mostly automatically, but this ensures a fallback.
                 if UserDefaults.standard.object(forKey: "snoreConfidenceThreshold") == nil {
                     UserDefaults.standard.set(AppSettings.defaultSnoreConfidenceThreshold, forKey: "snoreConfidenceThreshold")
+                }
+                // Initialize audio settings if they are not set (first launch)
+                if UserDefaults.standard.string(forKey: "audioFormatPreference") == nil {
+                    UserDefaults.standard.audioFormatPreference = .aac // Default
+                }
+                if UserDefaults.standard.double(forKey: "sampleRatePreference") == 0 { // Default for double is 0 if not set
+                    UserDefaults.standard.sampleRatePreference = 44100.0 // Default
+                }
+                if UserDefaults.standard.string(forKey: "audioQualityPreference") == nil {
+                    UserDefaults.standard.audioQualityPreference = .high // Default
                 }
             }
         }
     }
 
     private func clearAllData() {
-        // ... (your existing clearAllData and clearAllAudioFiles functions) ...
-        clearDataSuccess = false // Reset status
+        clearDataSuccess = false
         clearDataErrorMessage = nil
 
+        // Clear Core Data
         let fetchRequestSoundEvents: NSFetchRequest<NSFetchRequestResult> = SoundEvent.fetchRequest()
         let batchDeleteRequestSoundEvents = NSBatchDeleteRequest(fetchRequest: fetchRequestSoundEvents)
 
-        // Assuming you have RecordingSession entity
         let fetchRequestRecordingSessions: NSFetchRequest<NSFetchRequestResult> = RecordingSession.fetchRequest()
         let batchDeleteRequestRecordingSessions = NSBatchDeleteRequest(fetchRequest: fetchRequestRecordingSessions)
 
@@ -100,17 +155,18 @@ struct SettingsView: View {
             try viewContext.execute(batchDeleteRequestRecordingSessions)
 
             try viewContext.save()
-            viewContext.reset() // Reset context to clear in-memory objects
+            viewContext.reset() // Reset context to clear in-memory objects and ensure UI refresh
 
             clearDataSuccess = true
             print("Successfully cleared all data from Core Data.")
 
+            // Clear associated audio files
             clearAllAudioFiles()
 
         } catch {
             print("Error clearing Core Data: \(error.localizedDescription)")
             clearDataErrorMessage = error.localizedDescription
-            viewContext.rollback()
+            viewContext.rollback() // Rollback changes on error
         }
     }
 
@@ -121,7 +177,11 @@ struct SettingsView: View {
         do {
             let fileURLs = try fileManager.contentsOfDirectory(at: documentsDirectory, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             for fileURL in fileURLs {
-                if fileURL.pathExtension == "m4a" {
+                // Ensure you delete files with the correct extension based on user preference,
+                // not just ".m4a". The `AudioFormat` enum in UserDefaults+AudioSettings.swift
+                // has a `fileExtension` property you can use to check ALL possible recorded extensions.
+                // For now, this assumes only m4a and wav are possible due to common usage.
+                if fileURL.pathExtension == "m4a" || fileURL.pathExtension == "wav" { // ADD .wav here
                     try fileManager.removeItem(at: fileURL)
                     print("Deleted audio file: \(fileURL.lastPathComponent)")
                 }
@@ -132,3 +192,4 @@ struct SettingsView: View {
         }
     }
 }
+

@@ -13,8 +13,15 @@ import CoreML
 import AVFoundation
 import CoreData
 
+// MARK: - SnoreDoctorObserverDelegate Protocol Definition
+protocol SnoreDoctorObserverDelegate: AnyObject { // Use 'AnyObject' for weak references
+    func didDetectSoundEvent(logString: String)
+    func analysisDidFail(error: Error)
+    func analysisDidComplete()
+}
+
 class SnoreDoctorObserver: NSObject, SNResultsObserving {
-    weak var delegate: SnoreDoctorObserverDelegate?
+    weak var delegate: SnoreDoctorObserverDelegate? // Make sure this is 'weak' to prevent retain cycles
     private let soundDataManager = SoundDataManager()
 
     var currentRecordingSession: RecordingSession?
@@ -36,7 +43,7 @@ class SnoreDoctorObserver: NSObject, SNResultsObserving {
             print("Warning: Request is not an SNClassifySoundRequest or windowDuration not available. Using default duration.")
         }
 
-        let requiredConfidence = UserDefaults.standard.snoreConfidenceThreshold
+        let requiredConfidence = UserDefaults.standard.snoreConfidenceThreshold // Assuming this exists
 
         // Always get the top classification for saving, even if it doesn't meet the display threshold
         let identifierToSave: String
@@ -52,24 +59,19 @@ class SnoreDoctorObserver: NSObject, SNResultsObserving {
                 let confidenceDisplay = String(format: "%.2f", topClassification.confidence * 100)
                 outputStringForUI = "Detected: \(topClassification.identifier) (Confidence: \(confidenceDisplay)%)\n"
             }
-            // Optionally, handle "low confidence" UI logging here if desired
-            // else { outputStringForUI = "Detected: Other noise (Confidence: \(confidenceDisplay)%)\n" }
         } else {
             // Handle cases with no classifications (e.g., truly silence or classifier couldn't identify)
             identifierToSave = "Silence" // Or "Unknown"
-            confidenceToSave = 1.0 // Or 0.0, depending on what "Silence" means for confidence
+            confidenceToSave = 0.0 // No confidence for Silence/Unknown
             outputStringForUI = "Detected: Silence\n" // Still log silence to UI
         }
 
         // 1. ALWAYS SAVE THE EVENT TO CORE DATA
         if let session = self.currentRecordingSession {
-            // Use DispatchQueue.main.async for UI updates, but Core Data operations
-            // should ideally be on the context's private queue if performance is critical,
-            // or here if the context merges changes automatically (which yours does).
             DispatchQueue.main.async { // This block is fine as it wraps the saving
                 self.soundDataManager.saveSnoreDoctorResult(
-                    identifier: identifierToSave, // Pass the direct identifier
-                    confidence: confidenceToSave,   // Pass the raw confidence
+                    identifier: identifierToSave,
+                    confidence: confidenceToSave,
                     session: session,
                     duration: eventDuration
                 )

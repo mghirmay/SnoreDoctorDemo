@@ -4,6 +4,7 @@
         <attribute name="audioFileName" optional="YES" attributeType="String"/>
         <attribute name="endTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
         <attribute name="startTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="totalSnoreEvents" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>

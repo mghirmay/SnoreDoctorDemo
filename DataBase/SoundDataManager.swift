@@ -1,8 +1,8 @@
 // MARK: - SoundDataManager.swift (or within your existing ViewModel)
-//  SoundDataManager.swift
-//  SnoreDoctorDemo
+//  SoundDataManager.swift
+//  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 24.06.25.
+//  Created by musie Ghirmay on 24.06.25.
 //
 
 
@@ -14,56 +14,46 @@ class SoundDataManager {
     let persistenceController = PersistenceController.shared
 
     /**
-     Parses a sound analysis log string and saves it to Core Data.
-     Example input: "Detected: whispering (Confidence: 81.34%)"
+     Saves a sound analysis result directly to Core Data.
 
-     - Parameter logString: The string containing the detected event and confidence.
+     - Parameter identifier: The name of the detected sound event (e.g., "snoring", "speech").
+     - Parameter confidence: The confidence score of the detection (0.0 to 1.0).
      - Parameter session: The RecordingSession object this event belongs to.
-     - Parameter duration: The duration of the detected event in seconds.
+     - Parameter duration: The duration of the detected event in seconds (optional).
      */
-    func saveSnoreDoctorResult(logString: String, session: RecordingSession, duration: Double? = nil) { // CHANGED: Now takes RecordingSession object
+    // MODIFIED: Signature changed to accept identifier and confidence directly
+    func saveSnoreDoctorResult(identifier: String, confidence: Double, session: RecordingSession, duration: Double? = nil) {
         let context = persistenceController.container.viewContext
 
-        let pattern = #"Detected: ([a-zA-Z_ ]+)(?: \(Confidence: (\d+\.\d+)%\))?"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            print("Error: Invalid regex pattern.")
-            return
+        context.perform { // Perform Core Data operations on the context's queue for thread safety
+            let newSoundEvent = SoundEvent(context: context)
+            newSoundEvent.id = UUID()
+            newSoundEvent.name = identifier // Use the direct identifier as the event name
+            newSoundEvent.confidence = confidence // Use the direct confidence (Double)
+            newSoundEvent.timestamp = Date() // Timestamp of the detection
+
+            newSoundEvent.audioFileName = session.audioFileName // Use session's audioFileName
+            newSoundEvent.duration = duration ?? 0.0
+
+            newSoundEvent.session = session // Link to the session!
+
+            // No need to call persistenceController.save() here for every event.
+            // Let the ViewController handle the final save when the session ends
+            // or when it deems appropriate to commit changes.
+            print("Prepared new sound event: '\(identifier)' (Conf: \(confidence)) for session '\(session.title ?? session.id?.uuidString ?? "N/A")' duration \(duration ?? 0.0)s")
         }
+    }
 
-        let range = NSRange(logString.startIndex..<logString.endIndex, in: logString)
-        if let match = regex.firstMatch(in: logString, options: [], range: range) {
-            var eventName: String?
-            var confidence: Double?
-
-            if let nameRange = Range(match.range(at: 1), in: logString) {
-                eventName = String(logString[nameRange]).trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-
-            if let confidenceRange = Range(match.range(at: 2), in: logString) {
-                confidence = Double(logString[confidenceRange])
-            }
-
-            if let name = eventName, !name.isEmpty {
-                let newSoundEvent = SoundEvent(context: context)
-                newSoundEvent.id = UUID()
-                newSoundEvent.name = name
-                newSoundEvent.confidence = confidence ?? 0.0
-                newSoundEvent.timestamp = Date() // Timestamp of the detection
-
-                newSoundEvent.audioFileName = session.audioFileName // Use session's audioFileName
-                newSoundEvent.duration = duration ?? 0.0
-
-                newSoundEvent.session = session // NEW: Link to the session!
-
-                // No need to call persistenceController.save() here for every event
-                // It's better to save the context less frequently, e.g., when the session ends
-                // Or let the ViewController handle the final save if it needs to ensure the session object is saved
-                print("Prepared new sound event: '\(name)' for session '\(session.title ?? session.id?.uuidString ?? "N/A")' duration \(duration ?? 0.0)s")
-            } else {
-                print("Could not parse valid event name from log string: \(logString)")
-            }
-        } else {
-            print("Log string did not match expected pattern: '\(logString)'")
+    // You might want to add a method to fetch all SoundEvents for the HistogramView if needed here
+    // Although the HistogramView uses @FetchRequest, sometimes a manager method is useful for other parts.
+    func fetchAllSoundEvents() -> [SoundEvent] {
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<SoundEvent> = SoundEvent.fetchRequest()
+        do {
+            return try context.fetch(request)
+        } catch {
+            print("Error fetching all sound events: \(error.localizedDescription)")
+            return []
         }
     }
 }

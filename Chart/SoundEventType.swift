@@ -33,10 +33,21 @@ enum SoundEventType: String, CaseIterable, Identifiable {
 
     // Optional: A helper to get a SoundEventType from a raw string, with a fallback
     static func from(rawValue: String?) -> SoundEventType {
-        guard let rawValue = rawValue,
-              let type = SoundEventType(rawValue: rawValue) else {
-            return .snoringSpeechLike // Default for nil or unrecognized string
+        guard let rawValue = rawValue else {
+            return .otherUnknown // Default for nil rawValue
         }
-        return type
+
+        // Convert the input rawValue to lowercase for case-insensitive comparison
+        let lowercasedRawValue = rawValue.lowercased()
+
+        // Iterate through all cases and compare their lowercased raw values
+        for type in SoundEventType.allCases {
+            if type.rawValue.lowercased() == lowercasedRawValue {
+                return type
+            }
+        }
+
+        // If no match is found, return a default/fallback case
+        return .otherUnknown // You might prefer .silence or another default
     }
 }

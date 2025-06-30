@@ -43,6 +43,7 @@ struct ChartViewContent: View {
                         let name = SoundEventType.from(rawValue: rawName).rawValue
                         let elapsedTime = timestamp.timeIntervalSince(firstTimestamp)
 
+
                         PointMark(
                             x: .value("Time", elapsedTime),
                             y: .value("Confidence", confidence)

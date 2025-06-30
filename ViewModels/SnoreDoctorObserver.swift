@@ -1,8 +1,8 @@
 //
-//  SnoreDoctorObserver.swift
-//  SnoreDoctorDemo
+//  SnoreDoctorObserver.swift
+//  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 29.06.25.
+//  Created by musie Ghirmay on 29.06.25.
 //
 
 
@@ -11,13 +11,12 @@ import Foundation
 import SoundAnalysis
 import CoreML
 import AVFoundation
-import CoreData // Make sure CoreData is imported for RecordingSession type
+import CoreData
 
 class SnoreDoctorObserver: NSObject, SNResultsObserving {
     weak var delegate: SnoreDoctorObserverDelegate?
     private let soundDataManager = SoundDataManager()
 
-    // CHANGED: Now holds a reference to the current RecordingSession
     var currentRecordingSession: RecordingSession?
 
     init(delegate: SnoreDoctorObserverDelegate?) {
@@ -29,8 +28,6 @@ class SnoreDoctorObserver: NSObject, SNResultsObserving {
 
         guard let classificationResult = result as? SNClassificationResult else { return }
 
-        var detectedSnoreEvent: (identifier: String, confidence: Double)? = nil
-
         let eventDuration: Double
         if let classifyRequest = request as? SNClassifySoundRequest {
             eventDuration = classifyRequest.windowDuration.seconds
@@ -41,32 +38,50 @@ class SnoreDoctorObserver: NSObject, SNResultsObserving {
 
         let requiredConfidence = UserDefaults.standard.snoreConfidenceThreshold
 
+        // Always get the top classification for saving, even if it doesn't meet the display threshold
+        let identifierToSave: String
+        let confidenceToSave: Double
+        var outputStringForUI: String? // Optional: Only set if an event for UI is detected
+
         if let topClassification = classificationResult.classifications.first {
+            identifierToSave = topClassification.identifier
+            confidenceToSave = topClassification.confidence
+
+            // Logic for UI display based on threshold
             if topClassification.confidence > requiredConfidence {
-                detectedSnoreEvent = (topClassification.identifier, topClassification.confidence)
+                let confidenceDisplay = String(format: "%.2f", topClassification.confidence * 100)
+                outputStringForUI = "Detected: \(topClassification.identifier) (Confidence: \(confidenceDisplay)%)\n"
             }
+            // Optionally, handle "low confidence" UI logging here if desired
+            // else { outputStringForUI = "Detected: Other noise (Confidence: \(confidenceDisplay)%)\n" }
         } else {
-            detectedSnoreEvent = ("Silence", 1.0)
+            // Handle cases with no classifications (e.g., truly silence or classifier couldn't identify)
+            identifierToSave = "Silence" // Or "Unknown"
+            confidenceToSave = 1.0 // Or 0.0, depending on what "Silence" means for confidence
+            outputStringForUI = "Detected: Silence\n" // Still log silence to UI
         }
 
-        if let (identifier, confidenceValue) = detectedSnoreEvent {
-            let confidence = String(format: "%.2f", confidenceValue * 100)
-            let outputString = "Detected: \(identifier) (Confidence: \(confidence)%)\n"
+        // 1. ALWAYS SAVE THE EVENT TO CORE DATA
+        if let session = self.currentRecordingSession {
+            // Use DispatchQueue.main.async for UI updates, but Core Data operations
+            // should ideally be on the context's private queue if performance is critical,
+            // or here if the context merges changes automatically (which yours does).
+            DispatchQueue.main.async { // This block is fine as it wraps the saving
+                self.soundDataManager.saveSnoreDoctorResult(
+                    identifier: identifierToSave, // Pass the direct identifier
+                    confidence: confidenceToSave,   // Pass the raw confidence
+                    session: session,
+                    duration: eventDuration
+                )
+            }
+        } else {
+            print("Error: currentRecordingSession is nil. SoundEvent not saved with session.")
+        }
 
+        // 2. ONLY UPDATE UI IF A RELEVANT EVENT WAS DETECTED (based on your threshold/logic)
+        if let logString = outputStringForUI {
             DispatchQueue.main.async {
-                self.delegate?.didDetectSoundEvent(logString: outputString)
-
-                // CHANGED: Pass the currentRecordingSession to SoundDataManager
-                if let session = self.currentRecordingSession {
-                    self.soundDataManager.saveSnoreDoctorResult(
-                        logString: outputString.trimmingCharacters(in: .whitespacesAndNewlines),
-                        session: session, // Pass the session object
-                        duration: eventDuration
-                    )
-                } else {
-                    print("Error: currentRecordingSession is nil. SoundEvent not saved with session.")
-                    // Handle this critical error: maybe log to a temporary file or alert user
-                }
+                self.delegate?.didDetectSoundEvent(logString: logString)
             }
         }
     }

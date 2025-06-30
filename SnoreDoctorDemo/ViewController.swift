@@ -317,6 +317,19 @@ class ViewController: UIViewController {
            self.present(hostingController, animated: true, completion: nil)
        }
 
+    // Action for the show Histogram button
+      @IBAction func showHistogram(_ sender: UIButton) {
+          let managedObjectContext = PersistenceController.shared.container.viewContext
+
+          // Renamed here:
+          let histogramView = SnoreDoctorEventNameHistogramView()
+              .environment(\.managedObjectContext, managedObjectContext)
+
+          let hostingController = UIHostingController(rootView: histogramView)
+          hostingController.modalPresentationStyle = .pageSheet
+          self.present(hostingController, animated: true, completion: nil)
+      }
+    
     
         @IBAction func showSettings(_ sender: UIButton) {
             let managedObjectContext = PersistenceController.shared.container.viewContext

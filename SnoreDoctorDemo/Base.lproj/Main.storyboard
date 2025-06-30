@@ -17,7 +17,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="wZz-ls-p7T">
-                                <rect key="frame" x="20" y="59" width="353" height="664.66666666666663"/>
+                                <rect key="frame" x="20" y="59" width="353" height="644.66666666666663"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <string key="text">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
                                 <color key="textColor" systemColor="labelColor"/>
@@ -25,10 +25,10 @@
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="D0x-ab-cdE">
-                                <rect key="frame" x="20" y="723.66666666666663" width="353" height="74.333333333333371"/>
+                                <rect key="frame" x="20" y="703.66666666666663" width="353" height="94.333333333333371"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="P5s-U2-SM4">
-                                        <rect key="frame" x="0.0" y="0.0" width="80.666666666666671" height="74.333333333333329"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="62.666666666666664" height="94.333333333333329"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="start analysis"/>
                                         <connections>
@@ -36,7 +36,7 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0sl-v9-Hlq" userLabel="show chart">
-                                        <rect key="frame" x="90.666666666666686" y="0.0" width="81" height="74.333333333333329"/>
+                                        <rect key="frame" x="72.666666666666671" y="0.0" width="62.666666666666671" height="94.333333333333329"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="show chart"/>
                                         <connections>
@@ -44,15 +44,23 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yourNewButtonID" userLabel="show playback">
-                                        <rect key="frame" x="181.66666666666666" y="0.0" width="80.666666666666657" height="74.333333333333329"/>
+                                        <rect key="frame" x="145.33333333333334" y="0.0" width="62.333333333333343" height="94.333333333333329"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="Show Playback"/>
                                         <connections>
                                             <action selector="showPlaybackView:" destination="BYZ-38-t0r" eventType="touchUpInside" id="ecG-02-wiI"/>
                                         </connections>
                                     </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="am4-LC-jJy" userLabel="histogram">
+                                        <rect key="frame" x="217.66666666666666" y="0.0" width="62.666666666666657" height="94.333333333333329"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="Histogramm"/>
+                                        <connections>
+                                            <action selector="showHistogram:" destination="BYZ-38-t0r" eventType="touchUpInside" id="SK8-E1-qgk"/>
+                                        </connections>
+                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rY5-AL-b38">
-                                        <rect key="frame" x="272.33333333333331" y="0.0" width="80.666666666666686" height="74.333333333333329"/>
+                                        <rect key="frame" x="290.33333333333331" y="0.0" width="62.666666666666686" height="94.333333333333329"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="settings"/>
                                         <connections>

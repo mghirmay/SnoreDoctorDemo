@@ -24,9 +24,9 @@
 		96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA366B2E123258001D8F43 /* ChartColorProvider.swift */; };
 		96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA366F2E123489001D8F43 /* SoundEventType.swift */; };
 		96DA36722E123550001D8F43 /* ChartViewContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36712E123550001D8F43 /* ChartViewContent.swift */; };
-		96DA36762E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */; };
 		96DA367C2E124039001D8F43 /* SoundEventPlaybackDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */; };
 		96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367D2E124072001D8F43 /* SoundEventListView.swift */; };
+		96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */; };
 		96DF26032DF725B6003498DA /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 96DF26022DF725B6003498DA /* MessagePack */; };
 /* End PBXBuildFile section */
 
@@ -68,9 +68,9 @@
 		96DA366B2E123258001D8F43 /* ChartColorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartColorProvider.swift; sourceTree = "<group>"; };
 		96DA366F2E123489001D8F43 /* SoundEventType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventType.swift; sourceTree = "<group>"; };
 		96DA36712E123550001D8F43 /* ChartViewContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewContent.swift; sourceTree = "<group>"; };
-		96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorPlaybackViewModel.swift; sourceTree = "<group>"; };
 		96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventPlaybackDelegate.swift; sourceTree = "<group>"; };
 		96DA367D2E124072001D8F43 /* SoundEventListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventListView.swift; sourceTree = "<group>"; };
+		96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorEventNameHistogramView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -209,7 +209,7 @@
 		96DA36682E1231FA001D8F43 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
-				96DA36752E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift */,
+				96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */,
 				96DA36712E123550001D8F43 /* ChartViewContent.swift */,
 				96DA366F2E123489001D8F43 /* SoundEventType.swift */,
 				96DA366B2E123258001D8F43 /* ChartColorProvider.swift */,
@@ -378,10 +378,10 @@
 				96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */,
 				96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */,
 				966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */,
+				96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */,
 				96BDA72B2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift in Sources */,
 				961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */,
 				96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */,
-				96DA36762E123F45001D8F43 /* SnoreDoctorPlaybackViewModel.swift in Sources */,
 				96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */,
 				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
 				968CD7812E119DA0009F5DB2 /* AudioManager.swift in Sources */,

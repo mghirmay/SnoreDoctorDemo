@@ -21,7 +21,7 @@ struct SnoreDoctorChartView: View {
     let currentLiveSessionID: UUID? // Used for the "Live View" predicate
 
     // Instantiate your playback view model
-    @StateObject private var playbackViewModel = SnoreDoctorPlaybackViewModel()
+    @StateObject private var playbackViewModel = AudioPlaybackViewModel()
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: false)],
@@ -191,12 +191,12 @@ struct SnoreDoctorChartView: View {
               } else {
                   print("Audio file not found at: \(audioURL.lastPathComponent). Cannot set up playback.")
                   playbackViewModel.stop()
-                  playbackViewModel.audioPlayer = nil
+                  //playbackViewModel.audioPlayer = nil
               }
           } else {
               // If no session is selected or audioFileName is nil/empty
               playbackViewModel.stop() // Stop any current playback
-              playbackViewModel.audioPlayer = nil // Clear the player
+              //playbackViewModel.audioPlayer = nil // Clear the player
           }
     }
 

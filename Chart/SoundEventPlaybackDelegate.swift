@@ -5,20 +5,20 @@
 //  Created by musie Ghirmay on 30.06.25.
 //
 
-//
-// SoundEventPlaybackDelegate.swift
-// SnoreDoctorDemo
-//
-// Created by [Your Name] on 2025/06/30.
-//
-
 import Foundation
+import Foundation
+import AVFoundation
+import Combine
+import CoreData
 
-// Define the protocol for playback actions
+// Assuming SoundEventPlaybackDelegate is defined elsewhere
 protocol SoundEventPlaybackDelegate: AnyObject {
     func seek(to time: TimeInterval)
     func play()
-    // You might also add:
-    // func pause()
-    // var isPlaying: Bool { get }
+    func pause()
+    func stop()
+    func togglePlayback()
+    func stopPlayback()
+    func loadAudio(fileName: String)
+    func loadAudio(for session: RecordingSession)
 }

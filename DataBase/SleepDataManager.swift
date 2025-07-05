@@ -15,6 +15,9 @@ import Foundation
 class SleepDataManager: ObservableObject {
     private let viewContext: NSManagedObjectContext
     
+    // Define the hour at which a "sleep day" starts (e.g., 6 PM)
+    private let sleepDayStartHour = 16 // 16:00 (4 PM)
+
     // Initializer to inject the Core Data context
     init(context: NSManagedObjectContext) {
         self.viewContext = context
@@ -29,37 +32,44 @@ class SleepDataManager: ObservableObject {
         // }
     }
     
-    // Fetches RecordingSessions for a specific date
+    // Fetches RecordingSessions for a specific "sleep day" defined by the given date
+    // The "sleep day" spans from sleepDayStartHour on `date` to sleepDayStartHour on the next
+    // calendar day.
     func fetchRecordingSessions(for date: Date) -> [RecordingSession] {
-        let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
-        
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
-            return []
+            let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
+            
+            let calendar = Calendar.current
+            
+            // Calculate the start of the "sleep day" (e.g., 6 PM on selectedDate)
+            var components = calendar.dateComponents([.year, .month, .day], from: date)
+            components.hour = sleepDayStartHour
+            let sleepDayStart = calendar.date(from: components)!
+            
+            // Calculate the end of the "sleep day" (e.g., 6 PM on the next calendar day)
+            guard let sleepDayEnd = calendar.date(byAdding: .day, value: 1, to: sleepDayStart) else {
+                return []
+            }
+            
+            // Predicate to filter sessions that either start or end within this custom "sleep day" window,
+            // or span across it. This predicate covers all cases for sessions relevant to this custom day.
+            let predicate = NSPredicate(format: "(startTime >= %@ AND startTime < %@) OR (endTime > %@ AND endTime <= %@) OR (startTime < %@ AND endTime > %@)",
+                                         sleepDayStart as NSDate,
+                                         sleepDayEnd as NSDate,
+                                         sleepDayStart as NSDate,
+                                         sleepDayEnd as NSDate,
+                                         sleepDayStart as NSDate,
+                                         sleepDayEnd as NSDate)
+            
+            fetchRequest.predicate = predicate
+            fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: true)]
+            
+            do {
+                return try viewContext.fetch(fetchRequest)
+            } catch {
+                print("Failed to fetch recording sessions for sleep day starting \(sleepDayStart): \(error)")
+                return []
+            }
         }
-        
-        // Predicate to filter sessions that either start or end on the given day
-        // Or sessions that span across the day (start before and end after)
-        // Ensure properties are non-nil for comparison in predicate
-        let predicate = NSPredicate(format: "(startTime >= %@ AND startTime < %@) OR (endTime >= %@ AND endTime < %@) OR (startTime < %@ AND endTime > %@)",
-                                    startOfDay as NSDate,
-                                    endOfDay as NSDate,
-                                    startOfDay as NSDate,
-                                    endOfDay as NSDate,
-                                    startOfDay as NSDate,
-                                    endOfDay as NSDate)
-        
-        fetchRequest.predicate = predicate
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: true)]
-        
-        do {
-            return try viewContext.fetch(fetchRequest)
-        } catch {
-            print("Failed to fetch recording sessions for date \(date): \(error)")
-            return []
-        }
-    }
     
     // Fetches SoundEvents for a specific RecordingSession
     func fetchSoundEvents(for recordingSession: RecordingSession) -> [SoundEvent] {
@@ -71,23 +81,66 @@ class SleepDataManager: ObservableObject {
         return eventsSet.sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
     }
     
+    
+    // NEW: Fetches ALL SoundEvents for a specific calendar date (midnight to midnight)
+      func fetchSoundEvents(for date: Date) -> [SoundEvent] {
+          let fetchRequest: NSFetchRequest<SoundEvent> = SoundEvent.fetchRequest()
+
+          let calendar = Calendar.current
+          let startOfDay = calendar.startOfDay(for: date)
+          guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+              return []
+          }
+
+          // Predicate to filter events that occurred within the selected calendar day
+          // Ensure 'timestamp' is the correct attribute name for SoundEvent's date
+          fetchRequest.predicate = NSPredicate(format: "timestamp >= %@ AND timestamp < %@",
+                                               startOfDay as NSDate,
+                                               endOfDay as NSDate)
+
+          fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \SoundEvent.timestamp, ascending: true)]
+
+          do {
+              return try viewContext.fetch(fetchRequest)
+          } catch {
+              print("Failed to fetch sound events for \(date): \(error)")
+              return []
+          }
+      }
+    
+    
+    // Calculates total sleep duration for a given day (in hours)
+    // This now fetches sessions via Core Data
     // Calculates total sleep duration for a given day (in hours)
     // This now fetches sessions via Core Data
     func calculateDailySleepDuration(for date: Date) -> TimeInterval {
-        let sessionsForDay = fetchRecordingSessions(for: date)
-        
-        guard let firstSessionStartTime = sessionsForDay.first?.startTime,
-              let lastSessionEndTime = sessionsForDay.last?.endTime else {
+        let sessionsForDay = fetchRecordingSessions(for: date) // Assuming this returns an array of sleep session objects
+
+        guard !sessionsForDay.isEmpty else {
             return 0 // No sleep data for this day
         }
-        
-        // Simple calculation: time from start of first session to end of last session.
-        // This still assumes contiguous sleep for calculation.
-        // For more advanced calculation:
-        // You might sum up the actual duration of each session (endTime - startTime)
-        // and add logic to subtract detected awake periods if you have that data.
-        let totalDuration = lastSessionEndTime.timeIntervalSince(firstSessionStartTime)
-        return totalDuration / 3600.0 // Convert to hours
+
+        var totalSleepTime: TimeInterval = 0
+
+        // Sum up the duration of each individual session
+        for session in sessionsForDay {
+            // Ensure both startTime and endTime exist for the session
+            guard let startTime = session.startTime,
+                  let endTime = session.endTime else {
+                // Log an error or handle cases where a session might be malformed
+                print("Warning: Malformed session found with missing start or end time.")
+                continue
+            }
+
+            // Ensure endTime is after startTime
+            if endTime > startTime {
+                totalSleepTime += endTime.timeIntervalSince(startTime)
+            } else {
+                print("Warning: Session found with endTime <= startTime. Skipping duration calculation for this session.")
+            }
+        }
+
+        return totalSleepTime  // Convert to hours
     }
     
     // MARK: - Dummy Core Data Loader (for testing)

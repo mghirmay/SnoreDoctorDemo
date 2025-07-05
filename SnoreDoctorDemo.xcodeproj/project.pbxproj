@@ -11,6 +11,13 @@
 		961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */; };
 		962549B92E1217D300EAFF47 /* TestToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962549B82E1217D300EAFF47 /* TestToolbarView.swift */; };
 		9636D1512E133C1C0081F469 /* SleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9676F68F2E13355700B7645F /* SleepReportView.swift */; };
+		9642141D2E1987E30021CCA5 /* DailySleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9642141A2E1987E30021CCA5 /* DailySleepReportView.swift */; };
+		9642141E2E1987E30021CCA5 /* AudioEventHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */; };
+		9642141F2E1987E30021CCA5 /* SleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9642141B2E1987E30021CCA5 /* SleepReportView.swift */; };
+		964214212E19882F0021CCA5 /* Date+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214202E19882F0021CCA5 /* Date+Extensions.swift */; };
+		964214232E1988A20021CCA5 /* AudioEventHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214222E1988A20021CCA5 /* AudioEventHistogramView.swift */; };
+		964214252E1988AE0021CCA5 /* DailySleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214242E1988AE0021CCA5 /* DailySleepReportView.swift */; };
+		964214292E1988E70021CCA5 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214282E1988E70021CCA5 /* CalendarView.swift */; };
 		966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */; };
 		966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */; };
 		9676F6592E130D5800B7645F /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9676F6582E130D5800B7645F /* README.md */; };
@@ -32,7 +39,7 @@
 		96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */; };
 		96DF26032DF725B6003498DA /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 96DF26022DF725B6003498DA /* MessagePack */; };
 		F5C5C7AF2E17278D00D8B49A /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F5C5C7AD2E17278D00D8B49A /* Localizable.strings */; };
-		F5C5C7B42E1729EF00D8B49A /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C5C7B32E1729EF00D8B49A /* Strings.swift */; };
+		F5C5C7B42E1729EF00D8B49A /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C5C7B32E1729EF00D8B49A /* String+Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +63,13 @@
 		961CD85E2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SnoreDoctorDataModel.xcdatamodel; sourceTree = "<group>"; };
 		961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SoundEvent+CoreDataClass.swift"; sourceTree = "<group>"; };
 		962549B82E1217D300EAFF47 /* TestToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolbarView.swift; sourceTree = "<group>"; };
+		964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEventHistogramView.swift; sourceTree = "<group>"; };
+		9642141A2E1987E30021CCA5 /* DailySleepReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySleepReportView.swift; sourceTree = "<group>"; };
+		9642141B2E1987E30021CCA5 /* SleepReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepReportView.swift; sourceTree = "<group>"; };
+		964214202E19882F0021CCA5 /* Date+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Extensions.swift"; sourceTree = "<group>"; };
+		964214222E1988A20021CCA5 /* AudioEventHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEventHistogramView.swift; sourceTree = "<group>"; };
+		964214242E1988AE0021CCA5 /* DailySleepReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySleepReportView.swift; sourceTree = "<group>"; };
+		964214282E1988E70021CCA5 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecordingSession+CoreDataClass.swift"; sourceTree = "<group>"; };
 		966F70B52E11CFA400331451 /* SleepingSessions+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SleepingSessions+CoreDataClass.swift"; sourceTree = "<group>"; };
 		9676F6582E130D5800B7645F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -81,7 +95,7 @@
 		96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorEventNameHistogramView.swift; sourceTree = "<group>"; };
 		F5C5C7AE2E17278D00D8B49A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F5C5C7B02E17279700D8B49A /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
-		F5C5C7B32E1729EF00D8B49A /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
+		F5C5C7B32E1729EF00D8B49A /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -167,9 +181,21 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		9642141C2E1987E30021CCA5 /* Report */ = {
+			isa = PBXGroup;
+			children = (
+				964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */,
+				9642141A2E1987E30021CCA5 /* DailySleepReportView.swift */,
+				9642141B2E1987E30021CCA5 /* SleepReportView.swift */,
+			);
+			path = Report;
+			sourceTree = "<group>";
+		};
 		9676F68E2E13354F00B7645F /* Report */ = {
 			isa = PBXGroup;
 			children = (
+				964214242E1988AE0021CCA5 /* DailySleepReportView.swift */,
+				964214222E1988A20021CCA5 /* AudioEventHistogramView.swift */,
 				9676F68F2E13355700B7645F /* SleepReportView.swift */,
 			);
 			path = Report;
@@ -178,6 +204,7 @@
 		968CD77F2E119D77009F5DB2 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				964214282E1988E70021CCA5 /* CalendarView.swift */,
 				962549B82E1217D300EAFF47 /* TestToolbarView.swift */,
 				96BDA72E2E12042D00DB5364 /* EventMarker.swift */,
 				96BDA72A2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift */,
@@ -200,6 +227,7 @@
 		96B49EA32DCFDB9200D779F9 = {
 			isa = PBXGroup;
 			children = (
+				9642141C2E1987E30021CCA5 /* Report */,
 				F5C5C7B12E17284600D8B49A /* Extensions */,
 				F5C5C7AD2E17278D00D8B49A /* Localizable.strings */,
 				9676F68E2E13354F00B7645F /* Report */,
@@ -247,7 +275,8 @@
 		F5C5C7B12E17284600D8B49A /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				F5C5C7B32E1729EF00D8B49A /* Strings.swift */,
+				F5C5C7B32E1729EF00D8B49A /* String+Extensions.swift */,
+				964214202E19882F0021CCA5 /* Date+Extensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -410,22 +439,29 @@
 				961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */,
 				96DA367C2E124039001D8F43 /* SoundEventPlaybackDelegate.swift in Sources */,
 				9636D1512E133C1C0081F469 /* SleepReportView.swift in Sources */,
+				964214292E1988E70021CCA5 /* CalendarView.swift in Sources */,
 				968CD7872E11A103009F5DB2 /* AudioPlaybackView.swift in Sources */,
+				964214232E1988A20021CCA5 /* AudioEventHistogramView.swift in Sources */,
 				966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */,
 				96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */,
 				96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */,
 				966F70BB2E11CFA400331451 /* SleepingSessions+CoreDataClass.swift in Sources */,
 				96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */,
+				9642141D2E1987E30021CCA5 /* DailySleepReportView.swift in Sources */,
+				9642141E2E1987E30021CCA5 /* AudioEventHistogramView.swift in Sources */,
+				9642141F2E1987E30021CCA5 /* SleepReportView.swift in Sources */,
 				96BDA72B2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift in Sources */,
 				961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */,
-				F5C5C7B42E1729EF00D8B49A /* Strings.swift in Sources */,
+				F5C5C7B42E1729EF00D8B49A /* String+Extensions.swift in Sources */,
 				96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */,
 				96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */,
 				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
 				968CD7812E119DA0009F5DB2 /* AudioManager.swift in Sources */,
+				964214212E19882F0021CCA5 /* Date+Extensions.swift in Sources */,
 				968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */,
 				96DA36672E122F70001D8F43 /* SoundEvent+Extensions.swift in Sources */,
 				968CD7832E119DC3009F5DB2 /* AudioRecorder.swift in Sources */,
+				964214252E1988AE0021CCA5 /* DailySleepReportView.swift in Sources */,
 				96DA36722E123550001D8F43 /* ChartViewContent.swift in Sources */,
 				962549B92E1217D300EAFF47 /* TestToolbarView.swift in Sources */,
 				968CD78E2E11B445009F5DB2 /* UserDefaults.swift in Sources */,

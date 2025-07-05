@@ -324,9 +324,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         self.currentRecordingSession = nil // Clear current session from ViewController
 
         updateResultsTextView(with: "Analysis stopped.\n")
-        
-        
-        
+        // Set button image to outline circle
+        analysisButton?.setImage(UIImage(systemName: "record.circle"), for: .normal)
     }
 
     @IBAction func toggleAnalysis(_ sender: UIButton) {
@@ -375,6 +374,13 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: chartView)
+        
+        //(Optional) Configure presentation style
+        // .fullScreen covers the entire screen.
+        // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
+        // .formSheet also presents as a sheet, typically for forms.
+        hostingController.modalPresentationStyle = .fullScreen
+
         self.present(hostingController, animated: true, completion: nil)
     }
 
@@ -392,6 +398,13 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
         // Pass the modified view to UIHostingController
         let hostingController = UIHostingController(rootView: hostedView)
+       
+        // (Optional) Configure presentation style
+        // .fullScreen covers the entire screen.
+        // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
+        // .formSheet also presents as a sheet, typically for forms.
+        hostingController.modalPresentationStyle = .fullScreen
+        
         self.present(hostingController, animated: true, completion: nil)
     }
 
@@ -421,7 +434,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             // 4. Create a UIHostingController with your SwiftUI view as its root view
             let hostingController = UIHostingController(rootView: sleepReportView)
 
-            // 5. (Optional) Configure presentation style
+            // (Optional) Configure presentation style
             // .fullScreen covers the entire screen.
             // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
             // .formSheet also presents as a sheet, typically for forms.
@@ -437,6 +450,13 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: settingsView)
+        
+        // (Optional) Configure presentation style
+        // .fullScreen covers the entire screen.
+        // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
+        // .formSheet also presents as a sheet, typically for forms.
+        hostingController.modalPresentationStyle = .fullScreen
+        
         self.present(hostingController, animated: true, completion: nil)
     }
 
@@ -663,6 +683,16 @@ extension MainViewController: NSFetchedResultsControllerDelegate {
     }
 }
 
+// You will also need your EditNotesView.swift file, as previously provided:
+
+//
+//  EditNotesView.swift
+//  SnoreDoctorDemo
+//
+//  Created by musie Ghirmay on 08.05.25.
+//
+import SwiftUI
+import CoreData
 
 struct EditNotesView: View {
     @Environment(\.managedObjectContext) private var viewContext

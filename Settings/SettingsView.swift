@@ -37,15 +37,16 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Analysis Settings") {
+                Section("Analysis Settings".translate()) {
                     VStack(alignment: .leading) {
-                        Text("Detection Confidence Threshold")
+                        Text("Detection Confidence Threshold".translate())
                             .font(.headline)
-                        Text(String(format: "Requires > %.1f%% Confidence", confidenceThreshold * 100))
+                        Text("Requires Confidence".transtateWithValue(value: String(Int(confidenceThreshold * 100 ))))
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         Slider(value: $confidenceThreshold, in: 0.0...1.0, step: 0.05) {
-                            Text("Threshold")
+                            Text("Threshold".translate())
+                                
                         } minimumValueLabel: {
                             Text("0%")
                         } maximumValueLabel: {
@@ -53,71 +54,75 @@ struct SettingsView: View {
                         }
                     }
                     .padding(.vertical, 5)
+                    .tint(Color("AppColor"))
                 }
 
                 // --- NEW Section: Audio Recording Quality ---
-                Section("Audio Recording Quality") {
-                    Picker("Format", selection: $selectedAudioFormat) {
+                Section("Audio Recording Quality".translate()) {
+                    Picker("Format".translate(), selection: $selectedAudioFormat) {
                         ForEach(UserDefaults.AudioFormat.allCases) { format in
-                            Text(format.rawValue).tag(format)
+                            Text(format.rawValue.translate()).tag(format)
                         }
                     }
                     .pickerStyle(.menu) // or .segmented for fewer options, or .wheel
-
+                    .tint(Color("AppColor"))
                     VStack(alignment: .leading) {
-                        Text("Sample Rate: \(Int(selectedSampleRate)) Hz")
+                        Text("Sample Rate".translate() + ": \(Int(selectedSampleRate / 1000)) kHz")
                         Slider(value: $selectedSampleRate, in: 16000.0...48000.0, step: 8000.0) { // Common sample rates
-                            Text("Sample Rate")
+                            Text("Sample Rate".translate())
                         } minimumValueLabel: {
-                            Text("16kHz")
+                            Text("16 kHz")
                         } maximumValueLabel: {
-                            Text("48kHz")
+                            Text("48 kHz")
                         }
+                        .tint(Color("AppColor"))
                     }
                     
-                    Picker("Quality", selection: $selectedAudioQuality) {
+                    Picker("Quality".translate(), selection: $selectedAudioQuality) {
                         ForEach(UserDefaults.AudioRecordingQuality.allCases) { quality in
-                            Text(quality.rawValue).tag(quality)
+                            Text(quality.rawValue.translate()).tag(quality)
                         }
                     }
                     .pickerStyle(.menu)
-                    
-                    Text("Higher quality/sample rate leads to larger file sizes and potentially more CPU usage during recording. PCM is uncompressed.")
+                    .tint(Color("AppColor"))
+                    Text("Info_Quality".translate())
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
                 // ---------------------------------------------
 
-                Section("Data Management") {
-                    Button("Clear All Recorded Data") {
+                Section("Data Management".translate()) {
+                    Button("Clear All Recorded Data".translate()) {
                         showingClearDataAlert = true
                     }
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.red)
                 }
 
                 if clearDataSuccess {
-                    Text("All data cleared successfully!")
+                    Text("All data cleared successfully!".translate())
                         .foregroundColor(.green)
                 } else if let errorMessage = clearDataErrorMessage {
-                    Text("Error clearing data: \(errorMessage)")
+                    Text("Error clearing data".translate() + " :\(errorMessage)")
                         .foregroundColor(.red)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("Settings".translate())
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
+                    Button("Done".translate()) {
                         dismiss()
                     }
+                    .tint(Color("AppColor"))
                 }
             }
-            .alert("Clear All Data?", isPresented: $showingClearDataAlert) {
-                Button("Clear", role: .destructive) {
+            .alert("Clear All Data?".translate(), isPresented: $showingClearDataAlert) {
+                Button("Clear".translate(), role: .destructive) {
                     clearAllData()
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel".translate(), role: .cancel) { }
             } message: {
-                Text("This action cannot be undone. All recorded sound events and session data will be permanently deleted.")
+                Text("Clear_Info".translate())
             }
             .onAppear {
                 // Ensure @AppStorage variables are initialized with default values if not already set.

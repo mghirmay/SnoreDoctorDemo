@@ -1,0 +1,8 @@
+/* 
+  InfoPlist.strings
+  UniTuner Pro
+
+  Created by Klaus Paul on 11.03.25.
+  
+*/
+NSMicrophoneUsageDescription = "The microphone is used to detect snoring. Audio recordings are only saved on your device and are not used outside the app!";

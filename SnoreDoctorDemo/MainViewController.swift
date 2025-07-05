@@ -29,7 +29,7 @@ enum AudioAnalysisError: LocalizedError {
 }
 
 
-class MainViewController: UIViewController {
+class MainViewController: UIViewController, UIPopoverPresentationControllerDelegate {
     private let multicastViewModel = MulticastServiceViewModel()
 
     @IBOutlet weak var resultsTextView: UITextView!
@@ -76,51 +76,87 @@ class MainViewController: UIViewController {
         return controller
     }()
 
-    // MARK: - Lifecycle
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        updateResultsTextView(with: "Ready to analyze sounds... \n", append: false)
-
-        // Configure Table View
-        sessionsTableView.dataSource = self
-        sessionsTableView.delegate = self
-        // If you're using the prototype cell from the storyboard, you don't need to register it here.
-        // If you were creating a custom cell programmatically, you'd register it:
-        // sessionsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "RecordingSessionCell")
-
-
-        // Perform initial fetch for the table view
-        do {
-            try fetchedResultsController.performFetch()
-            sessionsTableView.reloadData() // Populate table view with existing data
-        } catch {
-            print("Failed to perform initial fetch for RecordingSessions: \(error.localizedDescription)")
-            showAlert(title: "Error", message: "Could not load past sessions: \(error.localizedDescription)")
+    func checkMicrophonePermission() -> AVAuthorizationStatus {
+        let microphonePermissionStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        
+        switch microphonePermissionStatus {
+        case .authorized:
+            // The user has previously granted permission to use the microphone
+            return .authorized
+            
+        case .denied, .restricted:
+            // The user has explicitly denied or restricted microphone access
+            return .denied
+            
+        case .notDetermined:
+            // The user has not yet been asked for microphone access
+            return .notDetermined
+            
+        @unknown default:
+            // Handle future cases if necessary
+            return .denied
         }
-
-        // Let the user tap the button.
-        // Ensure analysisButton is disabled initially until permission is granted
-        analysisButton?.isEnabled = false
-        requestMicrophonePermission { [weak self] granted in
-            DispatchQueue.main.async {
-                self?.analysisButton?.isEnabled = granted
-                if !granted {
-                    self?.updateResultsTextView(with: "Microphone access denied. Please grant permission in Settings.\n")
-                }
+    }
+    
+    var alertNoPermission = UIAlertController()
+    
+    func noPermission() {
+        
+        let message = String(format: NSLocalizedString("NoPermission_message", comment: ""))
+        alertNoPermission = UIAlertController(title: NSLocalizedString("NoPermission_Headline", comment: "") , message: message, preferredStyle: .alert)
+        
+        
+        
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            alertNoPermission.addAction(UIAlertAction(title: "Cancel".translate(), style: .cancel, handler: { _ in }))
+        case .pad:
+            alertNoPermission.addAction(UIAlertAction(title: "Cancel".translate(), style: .default, handler: { _ in }))
+        default:
+            alertNoPermission.addAction(UIAlertAction(title: "Cancel".translate(), style: .default, handler: { _ in }))
+        }
+        alertNoPermission.popoverPresentationController?.sourceView = self.view
+        alertNoPermission.popoverPresentationController?.sourceRect = CGRect(    // the place to display the popover
+            origin: CGPoint(
+                x: self.view.bounds.midX,
+                y: self.view.bounds.midY
+            ),
+            size: .zero
+        )
+        alertNoPermission.popoverPresentationController?.permittedArrowDirections = [] // the direction of the arrow
+        alertNoPermission.popoverPresentationController?.delegate = self
+        
+        self.present(alertNoPermission, animated: true, completion: nil)
+    }
+    
+    @objc func checkPermission() {
+        let deadLine = DispatchTime.now() + 5
+        
+        DispatchQueue.main.asyncAfter(deadline: deadLine) {
+            
+            let microphonePermission = self.checkMicrophonePermission()
+            print("microphonePermission",microphonePermission)
+            switch microphonePermission {
+            case .authorized:
+                // Microphone permission is granted, you can use the microphone
+                print("Microphone permission granted")
+                
+            case .denied, .restricted:
+                // Microphone permission is denied or restricted, inform the user
+                print("Microphone permission denied or restricted")
+                self.noPermission()
+            case .notDetermined:
+                // Microphone permission is not determined, request permission
+                print("Microphone permission not determined")
+                self.checkPermission()
+            @unknown default:
+                // Handle future cases if necessary
+                break
             }
         }
-        setupSoundClassifier()
-        multicastViewModel.start()
-        // Set initial image for the button
-        analysisButton?.setImage(UIImage(systemName: "record.circle"), for: .normal)
     }
-
-    deinit {
-        // Ensure all audio resources are stopped and released when ViewController is deinitialized
-        stopAudioAnalysis()
-        print("ViewController deinitialized")
-    }
+    
+    
 
     // MARK: - UI Updates & Multicast
 
@@ -288,16 +324,27 @@ class MainViewController: UIViewController {
         self.currentRecordingSession = nil // Clear current session from ViewController
 
         updateResultsTextView(with: "Analysis stopped.\n")
-        // Set button image to outline circle
-        analysisButton?.setImage(UIImage(systemName: "record.circle"), for: .normal)
+        
+        
+        
     }
 
     @IBAction func toggleAnalysis(_ sender: UIButton) {
         if audioStreamAnalyzer == nil {
             startAudioAnalysis()
             // The image will be set in startAudioAnalysis()
+            
+            let title = NSAttributedString(string: "Stop Session".translate(), attributes: attributesBold)
+            analysisButton?.setAttributedTitle(title, for: .normal)
+            
         } else {
             stopAudioAnalysis()
+            
+            analysisButton?.setImage(UIImage(systemName: "record.circle"), for: .normal)
+            let title = NSAttributedString(string: "Start New Session".translate(), attributes: attributesBold)
+            analysisButton?.setAttributedTitle(title, for: .normal)
+            
+            
             // The image will be set in stopAudioAnalysis()
         }
     }
@@ -405,6 +452,74 @@ class MainViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         self.present(alert, animated: true, completion: nil)
     }
+    
+    let attributesBold: [NSAttributedString.Key: Any] = [
+        .font: UIFont.systemFont(ofSize: 21, weight: .bold)
+    ]
+    
+    
+    // MARK: - ViewDidLoad
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        updateResultsTextView(with: "Ready to analyze sounds... \n", append: false)
+        
+        // Configure Table View
+        sessionsTableView.dataSource = self
+        sessionsTableView.delegate = self
+        // If you're using the prototype cell from the storyboard, you don't need to register it here.
+        // If you were creating a custom cell programmatically, you'd register it:
+        // sessionsTableView.register(UITableViewCell.self, forCellReuseIdentifier: "RecordingSessionCell")
+        
+        
+        // Perform initial fetch for the table view
+        do {
+            try fetchedResultsController.performFetch()
+            sessionsTableView.reloadData() // Populate table view with existing data
+        } catch {
+            print("Failed to perform initial fetch for RecordingSessions: \(error.localizedDescription)")
+            showAlert(title: "Error", message: "Could not load past sessions: \(error.localizedDescription)")
+        }
+        
+        // Let the user tap the button.
+        // Ensure analysisButton is disabled initially until permission is granted
+        
+        
+        analysisButton?.layer.cornerRadius = 10
+        
+        
+        let title = NSAttributedString(string: "Start New Session".translate(), attributes: attributesBold)
+        analysisButton?.setAttributedTitle(title, for: .normal)
+        
+        
+        
+        analysisButton?.isEnabled = false
+        requestMicrophonePermission { [weak self] granted in
+            DispatchQueue.main.async {
+                self?.analysisButton?.isEnabled = granted
+                if !granted {
+                    self?.updateResultsTextView(with: "Microphone access denied. Please grant permission in Settings.\n")
+                }
+            }
+        }
+        setupSoundClassifier()
+        multicastViewModel.start()
+        // Set initial image for the button
+        analysisButton?.setImage(UIImage(systemName: "record.circle"), for: .normal)
+    }
+    
+    deinit {
+        // Ensure all audio resources are stopped and released when ViewController is deinitialized
+        stopAudioAnalysis()
+        print("ViewController deinitialized")
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        checkPermission()
+    }
+    
 }
 
 
@@ -548,16 +663,6 @@ extension MainViewController: NSFetchedResultsControllerDelegate {
     }
 }
 
-// You will also need your EditNotesView.swift file, as previously provided:
-
-//
-//  EditNotesView.swift
-//  SnoreDoctorDemo
-//
-//  Created by musie Ghirmay on 08.05.25.
-//
-import SwiftUI
-import CoreData
 
 struct EditNotesView: View {
     @Environment(\.managedObjectContext) private var viewContext

@@ -1,0 +1,8 @@
+/* 
+  InfoPlist.strings
+  UniTuner Pro
+
+  Created by Klaus Paul on 11.03.25.
+  
+*/
+NSMicrophoneUsageDescription = "Das Mikrofon wird Erkennung von Schnarchen verwendet. Audioaufnahmen werden nur auf deinem Gerät gespeichert und nicht außerhalb der App verwendet!";

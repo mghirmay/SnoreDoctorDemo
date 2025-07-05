@@ -1,0 +1,53 @@
+/* 
+  Localizable.strings
+  SnoreDoctorDemo
+
+  Created by Klaus Paul on 03.07.25.
+  
+*/
+
+// Main Viewcontroller
+"Start New Session" = "  Start New Session";
+"Stop Session" = "  Stop Session";
+
+
+// Settings
+"Settings" = "Settings";
+"Done" = "Done";
+
+"Analysis Settings" = "Analysis Settings";
+"Detection Confidence Threshold" = "Detection Confidence Threshold";
+"Threshold" = "Threshold";
+"Requires Confidence" = "Requires > %@%% Confidence";
+
+"Data Management" = "Data Management";
+"Clear All Recorded Data" = "Clear All Recorded Data";
+"All data cleared successfully!" = "All data cleared successfully!";
+"Error clearing data" = "Error clearing data";
+"Clear All Data?" = "Clear All Data?";
+"Clear" = "Clear";
+"Cancel" = "Cancel";
+"Clear_Info" = "This action cannot be undone. All recorded sound events and session data will be permanently deleted.";
+
+"Audio Recording Quality" = "Audio Recording Quality";
+"Format" = "Format";
+"Sample Rate" = "Sample Rate";
+"Quality" = "Quality";
+"Info_Quality" = "Higher quality/sample rate leads to larger file sizes and potentially more CPU usage during recording. PCM is uncompressed.";
+
+"AAC (Compressed)" = "AAC (Compressed)";
+"Apple Lossless (ALAC)" = "Apple Lossless (ALAC)";
+"PCM (Uncompressed)" = "PCM (Uncompressed)";
+
+"Minimum" = "Minimum";
+"Low" = "Low";
+"Medium" = "Medium";
+"High" = "High";
+"Maximum" = "Maximum";
+
+
+// NO PERMISSION
+"NoPermission_Headline" = "Microphone permission denied or restricted!";
+"NoPermission_message" = "Without permission to the microphone the app will not work! Open the iOS Settings > SnoreDoc and enable the permission for the microphone.";
+
+

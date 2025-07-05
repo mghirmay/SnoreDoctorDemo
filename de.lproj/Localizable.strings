@@ -1,0 +1,49 @@
+/* 
+  Localizable.strings
+  SnoreDoctorDemo
+
+  Created by Klaus Paul on 03.07.25.
+  
+*/
+// Main ViewController
+"Start New Session" = "  Starte Neue Sitzung";
+"Stop Session" = "  Sitzung Beenden";
+
+"Settings" = "Einstellungen";
+"Done" = "Fertig";
+
+"Analysis Settings" = "Analyse Einstellungen";
+"Detection Confidence Threshold" = "Schwellenwert für die Erkennungswahrscheinlichkeit";
+"Threshold" = "Schwellenwert";
+"Requires Confidence" = "Benötigte Erkennungswahrscheinlichkeit > %@%%";
+
+"Data Management" = "Daten Verwaltung";
+"Clear All Recorded Data" = "Alle Daten löschen";
+"All data cleared successfully!" = "Alle Aufnahmen wurden erfolgreich gelöscht!";
+"Error clearing data" = "Fehler beim Löschen";
+"Clear All Data?" = "Alle Daten löschen?";
+"Clear" = "Löschen";
+"Cancel" = "Abbrechen";
+"Clear_Info" = "Diese Aktion kann nicht rückgängig gemacht werden. Alle aufgezeichneten Tonereignisse und Sitzungsdaten werden dauerhaft gelöscht.";
+
+
+"Audio Recording Quality" = "Aufnahme Qualität";
+"Format" = "Format";
+"Sample Rate" = "Samplerate";
+"Quality" = "Qualität";
+"Info_Quality" = "Eine höhere Qualität/Abtastrate führt zu größeren Dateien und möglicherweise zu einer höheren CPU-Auslastung während der Aufnahme. PCM ist unkomprimiert.";
+
+"AAC (Compressed)" = "AAC (Komprimiert)";
+"Apple Lossless (ALAC)" = "Apple Lossless (ALAC)";
+"PCM (Uncompressed)" = "PCM (Unkomprimiert)";
+
+"Minimum" = "Minimum";
+"Low" = "Niedrig";
+"Medium" = "Mittel";
+"High" = "Hoch";
+"Maximum" = "Maximum";
+
+
+// NO PERMISSION
+"NoPermission_Headline" = "Mikrofonzugriff verweigert oder eingeschränkt!";
+"NoPermission_message" = "Ohne Mikrofonzugriff funktioniert die App nicht! Öffne die iOS-Einstellungen > SnoreDoc und aktiviere die Mikrofonberechtigung.";

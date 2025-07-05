@@ -31,6 +31,8 @@
 		96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367D2E124072001D8F43 /* SoundEventListView.swift */; };
 		96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */; };
 		96DF26032DF725B6003498DA /* MessagePack in Frameworks */ = {isa = PBXBuildFile; productRef = 96DF26022DF725B6003498DA /* MessagePack */; };
+		F5C5C7AF2E17278D00D8B49A /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F5C5C7AD2E17278D00D8B49A /* Localizable.strings */; };
+		F5C5C7B42E1729EF00D8B49A /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C5C7B32E1729EF00D8B49A /* Strings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +79,9 @@
 		96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventPlaybackDelegate.swift; sourceTree = "<group>"; };
 		96DA367D2E124072001D8F43 /* SoundEventListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEventListView.swift; sourceTree = "<group>"; };
 		96DA367F2E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreDoctorEventNameHistogramView.swift; sourceTree = "<group>"; };
+		F5C5C7AE2E17278D00D8B49A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F5C5C7B02E17279700D8B49A /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F5C5C7B32E1729EF00D8B49A /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -195,6 +200,8 @@
 		96B49EA32DCFDB9200D779F9 = {
 			isa = PBXGroup;
 			children = (
+				F5C5C7B12E17284600D8B49A /* Extensions */,
+				F5C5C7AD2E17278D00D8B49A /* Localizable.strings */,
 				9676F68E2E13354F00B7645F /* Report */,
 				9676F65A2E130D6700B7645F /* LICENSE */,
 				9676F6582E130D5800B7645F /* README.md */,
@@ -235,6 +242,14 @@
 				96DA367D2E124072001D8F43 /* SoundEventListView.swift */,
 			);
 			path = Chart;
+			sourceTree = "<group>";
+		};
+		F5C5C7B12E17284600D8B49A /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				F5C5C7B32E1729EF00D8B49A /* Strings.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -341,6 +356,7 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
 			);
 			mainGroup = 96B49EA32DCFDB9200D779F9;
 			minimizedProjectReferenceProxies = 1;
@@ -365,6 +381,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9676F6592E130D5800B7645F /* README.md in Resources */,
+				F5C5C7AF2E17278D00D8B49A /* Localizable.strings in Resources */,
 				9676F65B2E130D6700B7645F /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -401,6 +418,7 @@
 				96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */,
 				96BDA72B2E11FF5A00DB5364 /* AudioPlaybackViewModel.swift in Sources */,
 				961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */,
+				F5C5C7B42E1729EF00D8B49A /* Strings.swift in Sources */,
 				96DA367E2E124072001D8F43 /* SoundEventListView.swift in Sources */,
 				96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */,
 				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
@@ -443,6 +461,18 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin PBXVariantGroup section */
+		F5C5C7AD2E17278D00D8B49A /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F5C5C7AE2E17278D00D8B49A /* en */,
+				F5C5C7B02E17279700D8B49A /* de */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		96B49ED62DCFDB9300D779F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -451,15 +481,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = REN224BC53;
+				DEVELOPMENT_TEAM = TZ674QWHG3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoc;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -483,15 +514,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = REN224BC53;
+				DEVELOPMENT_TEAM = TZ674QWHG3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoc;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -513,6 +545,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -576,6 +609,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";

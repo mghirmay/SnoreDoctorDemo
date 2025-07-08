@@ -226,7 +226,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         do {
             try audioManager.setupAudioSessionForRecording(
                 category: .playAndRecord,
-                mode: .measurement,
+                mode: .default,   // Wiedergabe ist bei .measurement ist sehr leise
                 options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers]
             )
 

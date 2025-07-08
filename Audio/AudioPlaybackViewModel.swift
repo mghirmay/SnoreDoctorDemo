@@ -26,6 +26,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.volume = 1.0 // Range: 0.0 (mute) to 1.0 (max)
             audioPlayer?.prepareToPlay()
             audioPlayer?.delegate = self // This will now be valid
             print("Audio player setup for URL: \(url.lastPathComponent)")
@@ -117,6 +118,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.volume = 1.0
             audioPlayer?.delegate = self // This will now work
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0.0
@@ -171,6 +173,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: audioFileURL)
+            audioPlayer?.volume = 1.0
             audioPlayer?.delegate = self // This will now work
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0.0

@@ -33,33 +33,42 @@ struct ChartViewContent: View {
 
             Chart {
                 ForEach(soundEvents) { event in
-                    if let timestamp = event.timestamp,
-                       let rawName = event.name, // Get the raw string
-                       !rawName.isEmpty, // <-- Add this check!
-                       
-                        
-                        let confidence = event.confidence as? Double {
-                        
-                        let name = SoundEventType.from(rawValue: rawName).rawValue
-                        let elapsedTime = timestamp.timeIntervalSince(firstTimestamp)
-
-
-                        PointMark(
-                            x: .value("Time", elapsedTime),
-                            y: .value("Confidence", confidence)
-                        )
-                        .symbol(by: .value("Event Type", name))
-                        .foregroundStyle(by: .value("Event Type", name))
-                        .annotation(position: .overlay, alignment: .bottom) {
-                            Text(name)
-                                .font(.caption2)
-                                .foregroundColor(markerColor(name)) // Still uses the closure
-                                .background(Color.white.opacity(0.8))
-                                .clipShape(Capsule())
+                    if event.confidence > AppSettings.defaultSnoreConfidenceThreshold  {
+                        if let timestamp = event.timestamp,
+                           let rawName = event.name, // Get the raw string
+                           !rawName.isEmpty, // <-- Add this check!
+                           
+                            
+                            let confidence = event.confidence as? Double {
+                            
+                            let name = SoundEventType.from(rawValue: rawName).rawValue
+                            
+                            if rawName == "snoring" {
+                                
+                                
+                                let elapsedTime = timestamp.timeIntervalSince(firstTimestamp)
+                                
+                                
+                                BarMark (
+                                    x: .value("Time", elapsedTime),
+                                    y: .value("Confidence", confidence)
+                                )
+                                .symbol(by: .value("Event Type", name))
+                                .foregroundStyle(by: .value("Event Type", name))
+                                
+                                .annotation(position: .overlay, alignment: .bottom) {
+                                    Text(name)
+                                        .font(.caption2)
+                                        .foregroundColor(markerColor(name)) // Still uses the closure
+                                        .background(Color.white.opacity(0.8))
+                                        .clipShape(Capsule())
+                                }
+                            }
                         }
                     }
                 }
             }
+            .chartLegend(.hidden)
             .chartSymbolScale(
                 // Use the allSoundEventNames array
                 domain: allSoundEventNames,

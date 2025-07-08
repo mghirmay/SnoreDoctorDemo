@@ -50,12 +50,12 @@ struct SettingsView: View {
                         Text("Requires Confidence".transtateWithValue(value: String(Int(confidenceThreshold * 100 ))))
                             .font(.subheadline)
                             .foregroundColor(.gray)
-                        Slider(value: $confidenceThreshold, in: 0.0...1.0, step: 0.05) {
+                        Slider(value: $confidenceThreshold, in: 0.1...0.9, step: 0.05) {
                             Text("Threshold".translate())
                         } minimumValueLabel: {
-                            Text("0%")
+                            Text("10%")
                         } maximumValueLabel: {
-                            Text("100%")
+                            Text("90%")
                         }
                     }
                     .padding(.vertical, 5)

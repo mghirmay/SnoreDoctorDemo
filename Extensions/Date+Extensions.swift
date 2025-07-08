@@ -10,11 +10,11 @@ import Foundation
 // Extension to help with Date calculations
 //(can be placed in a separate file or at the top level)
 public extension Date {
-   public var startOfDay: Date {
+    var startOfDay: Date {
         Calendar.current.startOfDay(for: self)
     }
 
-   public var endOfDay: Date {
+    var endOfDay: Date {
         var components = DateComponents()
         components.day = 1
         let date = Calendar.current.date(byAdding: components, to: self.startOfDay)

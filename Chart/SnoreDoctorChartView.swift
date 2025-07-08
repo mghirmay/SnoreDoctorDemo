@@ -54,9 +54,9 @@ struct SnoreDoctorChartView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Text(selectedSessionID == nil ? "Live Session Chart" : "Session Chart")
-                    .font(.largeTitle)
-                    .padding(.top)
+//                Text(selectedSessionID == nil ? "Live Session Chart" : "Session Chart")
+//                    .font(.largeTitle)
+//                    .padding(.top)
 
                 Picker("Select Session", selection: $selectedSessionID) {
                     if isLiveSessionActive {
@@ -82,7 +82,7 @@ struct SnoreDoctorChartView: View {
                     updateSelectedRecordingSession(for: newID)
                 }
 
-                Divider()
+                
 
                 // Use a ScrollView to allow both chart and list to scroll
                 ScrollView {
@@ -100,8 +100,7 @@ struct SnoreDoctorChartView: View {
                             )
                             .frame(height: 300) // Give the chart a fixed height for consistency
 
-                            Divider()
-                                .padding(.vertical)
+                           
 
                             // MARK: - Event List View Content
                             // Pass the selected RecordingSession object and the playback view model as delegate
@@ -110,7 +109,7 @@ struct SnoreDoctorChartView: View {
                                 playbackDelegate: playbackViewModel // Pass the view model
                             )
                             // The list will expand to fill available height, but won't push content off screen due to ScrollView
-                            .frame(minHeight: 200, maxHeight: .infinity)
+                            .frame(minHeight: 600, maxHeight: .infinity)
                         }
                     }
                 }

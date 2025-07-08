@@ -43,14 +43,18 @@ struct SoundEventListView: View {
                     .foregroundColor(.gray)
             } else {
                 ForEach(soundEvents, id: \.self) { event in
-                    SoundEventRowView(
-                        event: event,
-                        playbackDelegate: playbackDelegate,
-                        formatter: Self.timeFormatter,
-                        onTap: {
-                            handleEventPlayback(event: event)
+                    if event.confidence >= AppSettings.defaultSnoreConfidenceThreshold {
+                        if event.name == "snoring" {
+                            SoundEventRowView(
+                                event: event,
+                                playbackDelegate: playbackDelegate,
+                                formatter: Self.timeFormatter,
+                                onTap: {
+                                    handleEventPlayback(event: event)
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
           }
@@ -104,11 +108,12 @@ fileprivate struct SoundEventRowView: View {
         Button(action: onTap) {
             HStack {
                 VStack(alignment: .leading) {
+                    
                     Text(event.name ?? "Unknown Event")
                         .font(.headline)
                         .foregroundColor(.primary)
 
-                    Text("Confidence: \(event.confidence, specifier: "%.2f")%")
+                    Text("Confidence: \(event.confidence * 100, specifier: "%.0f")%")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -116,7 +121,7 @@ fileprivate struct SoundEventRowView: View {
                     if let eventTimestamp = event.timestamp,
                        let eventSession = event.session,
                        let actualRecordingStartTime = eventSession.startTime {
-                        Text("Time: \(formatter.string(from: eventTimestamp.timeIntervalSince(actualRecordingStartTime)) ?? "N/A") (\(eventSession.title ?? "Unnamed Session"))")
+                        Text("Time: \(eventTimestamp.formatted(date: .omitted, time: .shortened))")
                             .font(.caption)
                             .foregroundColor(.gray)
                     } else {

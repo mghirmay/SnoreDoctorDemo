@@ -4,16 +4,17 @@
 //
 //  Created by musie Ghirmay on 29.06.25.
 //
-
 // SettingsView.swift
 import SwiftUI
 import CoreData
-import AVFoundation // Make sure to import AVFoundation for the audio setting constants if not already
-
+import AVFoundation
+import SoundAnalysis   // Import SoundAnalysis for CMTime if needed for constants, though not strictly required here.
 
 // Your existing AppSettings struct
 struct AppSettings {
     static let defaultSnoreConfidenceThreshold: Double = 0.6
+    static let defaultAnalysisWindowDuration: Double = 1.0
+    static let defaultAnalysisOverlapFactor: Double = 0.5
 }
 
 
@@ -28,11 +29,16 @@ struct SettingsView: View {
     // Existing: @AppStorage for the confidence threshold
     @AppStorage("snoreConfidenceThreshold") var confidenceThreshold: Double = AppSettings.defaultSnoreConfidenceThreshold
 
-    // --- NEW: @AppStorage for Audio Recording Settings ---
+    // --- NEW: @AppStorage for Sound Analysis Settings ---
+    @AppStorage("analysisWindowDuration") var analysisWindowDuration: Double = AppSettings.defaultAnalysisWindowDuration
+    @AppStorage("analysisOverlapFactor") var analysisOverlapFactor: Double = AppSettings.defaultAnalysisOverlapFactor
+    // ----------------------------------------------------
+
+    // Existing: @AppStorage for Audio Recording Settings
     @AppStorage("audioFormatPreference") var selectedAudioFormat: UserDefaults.AudioFormat = .aac
     @AppStorage("sampleRatePreference") var selectedSampleRate: Double = 44100.0
     @AppStorage("audioQualityPreference") var selectedAudioQuality: UserDefaults.AudioRecordingQuality = .high
-    // ----------------------------------------------------
+
 
     var body: some View {
         NavigationView {
@@ -46,7 +52,6 @@ struct SettingsView: View {
                             .foregroundColor(.gray)
                         Slider(value: $confidenceThreshold, in: 0.0...1.0, step: 0.05) {
                             Text("Threshold".translate())
-                                
                         } minimumValueLabel: {
                             Text("0%")
                         } maximumValueLabel: {
@@ -55,20 +60,57 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 5)
                     .tint(Color("AppColor"))
+
+                    // --- NEW UI for Window Duration ---
+                    VStack(alignment: .leading) {
+                        Text("Analysis Window Duration".translate())
+                            .font(.headline)
+                        Text("Duration_Info".transtateWithValue(value: String(format: "%.1f", analysisWindowDuration))) // e.g., "Window duration: 1.0 sec"
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Slider(value: $analysisWindowDuration, in: 0.1...5.0, step: 0.1) { // Example range: 0.1 to 5.0 seconds
+                            Text("Window Duration".translate())
+                        } minimumValueLabel: {
+                            Text("0.1s")
+                        } maximumValueLabel: {
+                            Text("5.0s")
+                        }
+                    }
+                    .padding(.vertical, 5)
+                    .tint(Color("AppColor"))
+
+                    // --- NEW UI for Overlap Factor ---
+                    VStack(alignment: .leading) {
+                        Text("Analysis Overlap Factor".translate())
+                            .font(.headline)
+                        Text("Overlap_Info".transtateWithValue(value: String(format: "%.1f", analysisOverlapFactor))) // e.g., "Overlap: 0.5 (50%)"
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Slider(value: $analysisOverlapFactor, in: 0.0...0.9, step: 0.1) { // Range for overlap factor (0.0 to <1.0)
+                            Text("Overlap Factor".translate())
+                        } minimumValueLabel: {
+                            Text("0%")
+                        } maximumValueLabel: {
+                            Text("90%")
+                        }
+                    }
+                    .padding(.vertical, 5)
+                    .tint(Color("AppColor"))
                 }
 
-                // --- NEW Section: Audio Recording Quality ---
+                // --- Existing Section: Audio Recording Quality ---
                 Section("Audio Recording Quality".translate()) {
                     Picker("Format".translate(), selection: $selectedAudioFormat) {
                         ForEach(UserDefaults.AudioFormat.allCases) { format in
                             Text(format.rawValue.translate()).tag(format)
                         }
                     }
-                    .pickerStyle(.menu) // or .segmented for fewer options, or .wheel
+                    .pickerStyle(.menu)
                     .tint(Color("AppColor"))
+
                     VStack(alignment: .leading) {
                         Text("Sample Rate".translate() + ": \(Int(selectedSampleRate / 1000)) kHz")
-                        Slider(value: $selectedSampleRate, in: 16000.0...48000.0, step: 8000.0) { // Common sample rates
+                        Slider(value: $selectedSampleRate, in: 16000.0...48000.0, step: 8000.0) {
                             Text("Sample Rate".translate())
                         } minimumValueLabel: {
                             Text("16 kHz")
@@ -77,7 +119,7 @@ struct SettingsView: View {
                         }
                         .tint(Color("AppColor"))
                     }
-                    
+
                     Picker("Quality".translate(), selection: $selectedAudioQuality) {
                         ForEach(UserDefaults.AudioRecordingQuality.allCases) { quality in
                             Text(quality.rawValue.translate()).tag(quality)
@@ -140,6 +182,15 @@ struct SettingsView: View {
                 if UserDefaults.standard.string(forKey: "audioQualityPreference") == nil {
                     UserDefaults.standard.audioQualityPreference = .high // Default
                 }
+
+                // --- NEW: Initialize analysis settings if not set ---
+                if UserDefaults.standard.object(forKey: "analysisWindowDuration") == nil {
+                    UserDefaults.standard.analysisWindowDuration = AppSettings.defaultAnalysisWindowDuration
+                }
+                if UserDefaults.standard.object(forKey: "analysisOverlapFactor") == nil {
+                    UserDefaults.standard.analysisOverlapFactor = AppSettings.defaultAnalysisOverlapFactor
+                }
+                // ----------------------------------------------------
             }
         }
     }
@@ -182,11 +233,7 @@ struct SettingsView: View {
         do {
             let fileURLs = try fileManager.contentsOfDirectory(at: documentsDirectory, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             for fileURL in fileURLs {
-                // Ensure you delete files with the correct extension based on user preference,
-                // not just ".m4a". The `AudioFormat` enum in UserDefaults+AudioSettings.swift
-                // has a `fileExtension` property you can use to check ALL possible recorded extensions.
-                // For now, this assumes only m4a and wav are possible due to common usage.
-                if fileURL.pathExtension == "m4a" || fileURL.pathExtension == "wav" { // ADD .wav here
+                if fileURL.pathExtension == "m4a" || fileURL.pathExtension == "wav" {
                     try fileManager.removeItem(at: fileURL)
                     print("Deleted audio file: \(fileURL.lastPathComponent)")
                 }

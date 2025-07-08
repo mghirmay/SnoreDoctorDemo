@@ -78,6 +78,8 @@ class SleepDataManager: ObservableObject {
         guard let eventsSet = recordingSession.events as? Set<SoundEvent> else {
             return []
         }
+        
+        
         return eventsSet.sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
     }
     

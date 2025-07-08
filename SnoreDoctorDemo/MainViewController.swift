@@ -189,22 +189,18 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             }
         }
     }
-
     // MARK: - Sound Analysis Setup
-
     private func setupSoundClassifier() {
         do {
-            // For a real Snore Doctor, replace this with your custom Core ML model
-            // Example if you had a 'SnoreDetector.mlmodel':
-            // let config = MLModelConfiguration()
-            // let model = try SnoreDetector(configuration: config).model
-            // soundClassifierRequest = try SNClassifySoundRequest(model: model)
             soundClassifierRequest = try SNClassifySoundRequest(classifierIdentifier: .version1)
 
-            // Optional: Set a minimum confidence for results to be reported
-            // soundClassifierRequest?.windowDuration = CMTime(seconds: 1.0, preferredTimescale: 1000)
-            // soundClassifierRequest?.overlapFactor = 0.5 // Adjust for more frequent analysis
-            // soundClassifierRequest?.sensitivity = 1.0 // 0.0 (less sensitive) to 1.0 (more sensitive)
+            // Retrieve values from UserDefaults
+            let windowDuration = UserDefaults.standard.analysisWindowDuration
+            let overlapFactor = UserDefaults.standard.analysisOverlapFactor
+
+            // Apply settings
+            soundClassifierRequest?.windowDuration = CMTime(seconds: windowDuration, preferredTimescale: 1000)
+            soundClassifierRequest?.overlapFactor = overlapFactor
 
         } catch {
             print("Failed to create sound classification request: \(error.localizedDescription)")
@@ -212,7 +208,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             analysisButton?.isEnabled = false // Disable analysis if model fails to load
         }
     }
-
+    
+    
     // MARK: - Audio Analysis Control
 
     private func startAudioAnalysis() {
@@ -438,7 +435,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             // .fullScreen covers the entire screen.
             // .pageSheet presents as a sheet on iPad, or full screen on iPhone.
             // .formSheet also presents as a sheet, typically for forms.
-           // hostingController.modalPresentationStyle = .fullScreen
+           hostingController.modalPresentationStyle = .fullScreen
 
             // 6. Present the UIHostingController
             self.present(hostingController, animated: true, completion: nil)
@@ -682,74 +679,3 @@ extension MainViewController: NSFetchedResultsControllerDelegate {
         sessionsTableView.endUpdates()
     }
 }
-
-// You will also need your EditNotesView.swift file, as previously provided:
-
-//
-//  EditNotesView.swift
-//  SnoreDoctorDemo
-//
-//  Created by musie Ghirmay on 08.05.25.
-//
-import SwiftUI
-import CoreData
-
-struct EditNotesView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.dismiss) var dismiss
-
-    @ObservedObject var session: RecordingSession
-
-    @State private var notesText: String = ""
-
-    var body: some View {
-        NavigationView {
-            Form {
-                Section("Session Details") {
-                    Text("Title: \(session.title ?? "Untitled Session")")
-                    if let startTime = session.startTime {
-                        Text("Started: \(startTime, formatter: Self.dateFormatter)")
-                    }
-                    if let endTime = session.endTime {
-                        Text("Ended: \(endTime, formatter: Self.dateFormatter)")
-                    }
-                }
-
-                Section("Notes") {
-                    TextEditor(text: $notesText)
-                        .frame(minHeight: 150)
-                        .autocapitalization(.sentences)
-                        .disableAutocorrection(false)
-                }
-            }
-            .navigationTitle("Edit Session Notes")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        viewContext.rollback()
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        session.notes = notesText
-                        PersistenceController.shared.save()
-                        dismiss()
-                    }
-                }
-            }
-            .onAppear {
-                notesText = session.notes ?? ""
-            }
-        }
-    }
-
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter
-    }()
-}
-

@@ -61,7 +61,7 @@ extension UserDefaults {
 
     // MARK: - UserDefaults Stored Properties for Audio Settings
 
-    // REMOVED @objc dynamic
+
     var audioFormatPreference: AudioFormat {
         get {
             let rawValue = string(forKey: "audioFormatPreference") ?? AudioFormat.aac.rawValue
@@ -72,7 +72,7 @@ extension UserDefaults {
         }
     }
 
-    // REMOVED @objc dynamic
+  
     var sampleRatePreference: Double {
         get {
             // Using `object(forKey:) == nil` is a robust way to check if a value has never been set.
@@ -100,5 +100,27 @@ extension UserDefaults {
     @objc dynamic var snoreConfidenceThreshold: Double {
         get { return double(forKey: "snoreConfidenceThreshold") }
         set { set(newValue, forKey: "snoreConfidenceThreshold") }
+    }
+    
+    // MARK: - Sound Analysis Settings
+    var analysisWindowDuration: Double {
+        get {
+            // Default to 1.0 second if not set
+            return object(forKey: "analysisWindowDuration") == nil ? 1.0 : double(forKey: "analysisWindowDuration")
+        }
+        set {
+            set(newValue, forKey: "analysisWindowDuration")
+        }
+    }
+
+    // REMOVED @objc dynamic
+    var analysisOverlapFactor: Double {
+        get {
+            // Default to 0.5 if not set
+            return object(forKey: "analysisOverlapFactor") == nil ? 0.5 : double(forKey: "analysisOverlapFactor")
+        }
+        set {
+            set(newValue, forKey: "analysisOverlapFactor")
+        }
     }
 }

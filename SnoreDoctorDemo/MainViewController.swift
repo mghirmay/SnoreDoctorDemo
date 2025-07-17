@@ -457,11 +457,11 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         self.present(hostingController, animated: true, completion: nil)
     }
 
-    // MARK: - SNResultsObserving Delegate (from SnoreDoctorObserver)
+    // MARK: - SNResultsObserving Delegate (from SoundEventDetectionObserver)
 
     // Using lazy var to ensure resultsObserver is initialized when first accessed
     // and is holding a weak reference to self.
-    private lazy var resultsObserver = SnoreDoctorObserver(delegate: self)
+    private lazy var resultsObserver = SoundEventDetectionObserver(delegate: self)
 
 
     private func showAlert(title: String, message: String) {
@@ -541,7 +541,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
 
 // MARK: - SnoreDoctorObserverDelegate Extension for ViewController
-extension MainViewController: SnoreDoctorObserverDelegate {
+extension MainViewController: SoundEventDetectionObserverDelegate {
     func didDetectSoundEvent(logString: String) {
         updateResultsTextView(with: logString)
         multicastViewModelSendData(data: logString)
@@ -624,21 +624,24 @@ extension MainViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true) // Deselect immediately
 
         let session = fetchedResultsController.object(at: indexPath)
-        presentEditNotesView(for: session)
+        // NEW: Present the combined SessionDetailView
+        presentSessionDetails(for: session)
     }
+    
+    // NEW: Helper to present the unified SessionDetailView
+    private func presentSessionDetails(for session: RecordingSession) {
+           let managedObjectContext = PersistenceController.shared.container.viewContext
 
-    // Helper to present the EditNotesView
-    private func presentEditNotesView(for session: RecordingSession) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
+           let sessionDetailView = SessionDetailView(session: session)
+               .environment(\.managedObjectContext, managedObjectContext)
 
-        // Pass the session object directly to the SwiftUI view
-        let editNotesView = EditNotesView(session: session)
-            .environment(\.managedObjectContext, managedObjectContext)
-
-        let hostingController = UIHostingController(rootView: editNotesView)
-        hostingController.modalPresentationStyle = .formSheet // or .pageSheet
-        self.present(hostingController, animated: true)
-    }
+           let hostingController = UIHostingController(rootView: sessionDetailView)
+           // You can choose the modalPresentationStyle:
+           // .pageSheet for a card-like presentation (common for details on iPad)
+           // .fullScreen for covering the entire screen
+           hostingController.modalPresentationStyle = .fullScreen // Or .pageSheet
+           self.present(hostingController, animated: true)
+       }
 }
 
 

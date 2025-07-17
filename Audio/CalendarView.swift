@@ -15,7 +15,7 @@ import CoreData
 struct CalendarView: View {
     @Binding var selectedDate: Date
     @Binding var currentMonth: Date
-    @ObservedObject var sleepDataManager: SleepDataManager // Now an ObservedObject for dynamic updates
+    @ObservedObject var soundDataManager: SoundDataManager // Now an ObservedObject for dynamic updates
 
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
@@ -71,7 +71,7 @@ struct CalendarView: View {
 
     private func dayCell(date: Date) -> some View {
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
-        let sleepDuration = sleepDataManager.calculateDailySleepDuration(for: date)
+        let sleepDuration = soundDataManager.calculateDailySleepDuration(for: date)
         let color = colorForSleepDuration(sleepDuration)
         let hasData = sleepDuration > 0 // Determines if there's any sleep data for the day
 

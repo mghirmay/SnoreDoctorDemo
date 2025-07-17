@@ -1,21 +1,33 @@
 //
-//  AppSettings.swift
-//  SnoreDoctorDemo
+//  AppSettings.swift
+//  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 29.06.25.
+//  Created by musie Ghirmay on 29.06.25.
 //
 
-
-// Extensions/Constants.swift (or similar file)
-// You might already have a file for constants, if not, create one.
 
 import Foundation
 import AVFoundation
 
+// Your existing AppSettings struct - ADD THE NEW DEFAULT VALUES HERE
+struct AppSettings {
+    static let defaultSnoreConfidenceThreshold: Double = 0.6
+    static let defaultAnalysisWindowDuration: Double = 1.0
+    static let defaultAnalysisOverlapFactor: Double = 0.5
+
+    // --- NEW: Default values for Snore Event Post-Processing ---
+    static let defaultPostProcessGapThreshold: Double = 5.0
+    static let defaultPostProcessSmoothingWindowSize: Int = 3
+    static let defaultPostProcessShortInterruptionThreshold: Double = 1.0
+
+    // --- NEW: Snore Identifiers (used by both aggregator and post-processor) ---
+    static let snoreEventIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"]
+}
+
+
 extension UserDefaults {
 
     // MARK: - Audio Recording Settings Enums
-
     enum AudioFormat: String, CaseIterable, Identifiable {
         case aac = "AAC (Compressed)" // .m4a
         case m4a = "Apple Lossless (ALAC)" // .m4a (lossless compression)
@@ -72,7 +84,6 @@ extension UserDefaults {
         }
     }
 
-  
     var sampleRatePreference: Double {
         get {
             // Using `object(forKey:) == nil` is a robust way to check if a value has never been set.
@@ -83,7 +94,6 @@ extension UserDefaults {
         }
     }
 
-    // REMOVED @objc dynamic
     var audioQualityPreference: AudioRecordingQuality {
         get {
             let rawValue = string(forKey: "audioQualityPreference") ?? AudioRecordingQuality.high.rawValue
@@ -94,11 +104,11 @@ extension UserDefaults {
         }
     }
 
-    // Keep your existing @objc dynamic extension for snoreConfidenceThreshold if you need KVO for it.
-    // Otherwise, you can also remove @objc dynamic from here for consistency.
-    // For this specific error, it's only the enum-backed properties that caused it.
     @objc dynamic var snoreConfidenceThreshold: Double {
-        get { return double(forKey: "snoreConfidenceThreshold") }
+        get {
+            // Default to a reasonable threshold if not set
+            return object(forKey: "snoreConfidenceThreshold") == nil ? 0.6 : double(forKey: "snoreConfidenceThreshold")
+        }
         set { set(newValue, forKey: "snoreConfidenceThreshold") }
     }
     
@@ -113,7 +123,6 @@ extension UserDefaults {
         }
     }
 
-    // REMOVED @objc dynamic
     var analysisOverlapFactor: Double {
         get {
             // Default to 0.5 if not set
@@ -121,6 +130,38 @@ extension UserDefaults {
         }
         set {
             set(newValue, forKey: "analysisOverlapFactor")
+        }
+    }
+
+    // MARK: - Snore Event Post-Processing Settings (NEWLY ADDED)
+
+    var postProcessGapThreshold: Double {
+        get {
+            // Default to 5.0 seconds if not set
+            return object(forKey: "postProcessGapThreshold") == nil ? 5.0 : double(forKey: "postProcessGapThreshold")
+        }
+        set {
+            set(newValue, forKey: "postProcessGapThreshold")
+        }
+    }
+
+    var postProcessSmoothingWindowSize: Int {
+        get {
+            // Default to 3 events if not set
+            return object(forKey: "postProcessSmoothingWindowSize") == nil ? 3 : integer(forKey: "postProcessSmoothingWindowSize")
+        }
+        set {
+            set(newValue, forKey: "postProcessSmoothingWindowSize")
+        }
+    }
+
+    var postProcessShortInterruptionThreshold: Double {
+        get {
+            // Default to 1.0 second if not set
+            return object(forKey: "postProcessShortInterruptionThreshold") == nil ? 1.0 : double(forKey: "postProcessShortInterruptionThreshold")
+        }
+        set {
+            set(newValue, forKey: "postProcessShortInterruptionThreshold")
         }
     }
 }

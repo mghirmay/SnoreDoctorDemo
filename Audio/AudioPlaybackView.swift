@@ -131,7 +131,7 @@ struct AudioPlaybackView: View {
                                 // For now, let's assume `soundEvents` is available via selectedRecordingSession
                                 // Or better, pass the predicate to EventMarker directly if it also uses @FetchRequest
                                 if let session = selectedRecordingSession,
-                                   let events = session.events as? Set<SoundEvent> {
+                                   let events = session.soundEvents as? Set<SoundEvent> {
                                     // Convert Set to Array and sort if necessary for consistent display order
                                     let sortedEvents = Array(events).sorted { ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast) }
 

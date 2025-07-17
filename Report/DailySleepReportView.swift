@@ -14,7 +14,7 @@ struct ChartableSleepSession: Identifiable {
 
 struct DailySleepReportView: View {
     let selectedDate: Date
-    @ObservedObject var sleepDataManager: SleepDataManager
+    @ObservedObject var soundDataManager: SoundDataManager
 
     @State private var dailySessions: [RecordingSession] = []
     @State private var dailySoundEvents: [SoundEvent] = []
@@ -94,7 +94,7 @@ struct DailySleepReportView: View {
                 .frame(height: 150)
                 .padding(.vertical)
 
-                Text("Total Sleep for this sleep day: \(formatDuration(sleepDataManager.calculateDailySleepDuration(for: selectedDate)))")
+                Text("Total Sleep for this sleep day: \(formatDuration(soundDataManager.calculateDailySleepDuration(for: selectedDate)))")
                     .font(.subheadline)
                     .padding(.top, 5)
             }
@@ -159,11 +159,11 @@ struct DailySleepReportView: View {
     }
 
     private func fetchDailySessions() {
-        dailySessions = sleepDataManager.fetchRecordingSessions(for: selectedDate)
+        dailySessions = soundDataManager.fetchRecordingSessions(for: selectedDate)
     }
 
     private func fetchDailySoundEvents() {
-        dailySoundEvents = sleepDataManager.fetchSoundEvents(for: selectedDate)
+        dailySoundEvents = soundDataManager.fetchSoundEvents(for: selectedDate)
     }
 
     private func calculateTotalSleepDurationForDisplay() -> TimeInterval {

@@ -92,6 +92,9 @@ struct EditNotesContentView: View {
                 if let endTime = session.endTime {
                     Text("Ended: \(endTime, formatter: Self.dateFormatter)")
                 }
+                Text("Snore Events: \(session.totalSnoreEvents)")
+                Text("Snore Related: \(session.totalSnoreRelated)")
+                Text("Other Events: \(session.totalNonSnoreEvents)")
             }
             .font(.subheadline)
             // No horizontal padding here, parent will handle it.

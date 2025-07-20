@@ -2,7 +2,7 @@
 //  RecordingSession+CoreDataProperties.swift
 //  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 16.07.25.
+//  Created by musie Ghirmay on 19.07.25.
 //  Copyright © 2025 SinitPower.de. All rights reserved.
 //
 //
@@ -24,6 +24,8 @@ extension RecordingSession {
     @NSManaged public var startTime: Date?
     @NSManaged public var title: String?
     @NSManaged public var totalSnoreEvents: Int32
+    @NSManaged public var totalSnoreRelated: Int32
+    @NSManaged public var totalNonSnoreEvents: Int32
     @NSManaged public var snoreEvents: NSSet?
     @NSManaged public var soundEvents: NSSet?
 

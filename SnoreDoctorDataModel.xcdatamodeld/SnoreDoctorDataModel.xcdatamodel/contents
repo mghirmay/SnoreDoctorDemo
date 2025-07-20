@@ -7,7 +7,9 @@
         <attribute name="notes" optional="YES" attributeType="String"/>
         <attribute name="startTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="totalNonSnoreEvents" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="totalSnoreEvents" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalSnoreRelated" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="snoreEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="SnoreEvent" inverseName="session" inverseEntity="SnoreEvent"/>
         <relationship name="soundEvents" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="SoundEvent" inverseName="session" inverseEntity="SoundEvent"/>
     </entity>

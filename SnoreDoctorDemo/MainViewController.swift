@@ -305,17 +305,12 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
         audioStreamAnalyzer?.removeAllRequests()
         audioStreamAnalyzer = nil
-        resultsObserver.currentRecordingSession = nil // Clear session from observer
-
         _ = audioRecorder.stopAndGetRecordingURL() // Stop the audio recording file
 
-        // 2. Set endTime for the current session and save it
-        if let session = self.currentRecordingSession {
-            session.endTime = Date()
-            PersistenceController.shared.save() // Save the session (and its related events)
-            print("Saved Recording Session: \(session.title ?? session.id?.uuidString ?? "N/A")")
-        } else {
-            print("Warning: No currentRecordingSession to save.")
+        // Set endTime for the current session and save it
+       if let session = self.currentRecordingSession {
+         resultsObserver.updateSessionCountsAndSave()
+         resultsObserver.currentRecordingSession = nil // Clear session from observer
         }
 
         self.currentRecordingSession = nil // Clear current session from ViewController
@@ -558,6 +553,7 @@ extension MainViewController: SoundEventDetectionObserverDelegate {
         stopAudioAnalysis() // Analysis completed, stop fully
         showAlert(title: "Analysis Complete", message: "Your recording session has ended.")
     }
+
 }
 
 // MARK: - UITableViewDataSource

@@ -21,7 +21,8 @@ struct AppSettings {
     static let defaultPostProcessShortInterruptionThreshold: Double = 1.0
 
     // --- NEW: Snore Identifiers (used by both aggregator and post-processor) ---
-    static let snoreEventIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"]
+    static let snoreEventIdentifier: String = "snoring"
+    static let snoreEventRelatedIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"]
 }
 
 

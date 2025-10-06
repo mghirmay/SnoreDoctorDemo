@@ -1,8 +1,8 @@
 //
-//  SoundEventDetectionObserver.swift
-//  SnoreDoctorDemo
+//  SoundEventDetectionObserver.swift
+//  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 29.06.25.
+//  Created by musie Ghirmay on 29.06.25.
 //
 import Foundation
 import SoundAnalysis
@@ -11,7 +11,6 @@ import AVFoundation
 import CoreData // Essential for Core Data operations
 
 // MARK: - SoundEventDetectionObserverDelegate Protocol Definition
-// (As provided by you, no changes made to this protocol)
 protocol SoundEventDetectionObserverDelegate: AnyObject {
     func didDetectSoundEvent(logString: String)
     func analysisDidFail(error: Error)
@@ -23,31 +22,36 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
     
     // The SoundDataManager and NSManagedObjectContext for Core Data operations
     private let soundDataManager =  SoundDataManager()
-   
+    
     // MARK: - Event Counters
     private var totalSnoreEventsDetected: Int = 0
     private var totalSnoreRelatedEventsDetected: Int = 0 // Includes 'snoring'
     private var totalNonSnoreEventsDetected: Int = 0
+
+    // NEW: Internal flag to control if processing of results should occur
+    private var isProcessingActive: Bool = true
 
     // MARK: - Recording Session and Aggregator
     weak var currentRecordingSession: RecordingSession? {
         didSet {
             // When a new recording session is assigned (e.g., recording starts)
             if let session = currentRecordingSession {
-               // Ensure context is available. Assuming PersistenceController is globally accessible.
+                // Ensure context is available. Assuming PersistenceController is globally accessible.
                 let context = PersistenceController.shared.container.viewContext
                 self.snoreAggregator = SnoreEventRealtimeAggregator(context: context, for: session)
-     
+    
                 // Reset event counters for the new session to start fresh
                 self.totalSnoreEventsDetected = 0
                 self.totalSnoreRelatedEventsDetected = 0
                 self.totalNonSnoreEventsDetected = 0
+                self.isProcessingActive = true // Ensure active when a new session starts
                 
                 print("SoundEventDetectionObserver: SnoreEventRealtimeAggregator and event counters initialized for new session.")
             } else {
                 // If the session becomes nil (e.g., recording stopped)
                 snoreAggregator?.finalizeRecordingSession() // Ensure any pending snore events are saved
                 snoreAggregator = nil // Clear the aggregator
+                self.isProcessingActive = false // Mark as inactive when no session
                 print("SoundEventDetectionObserver: SnoreEventRealtimeAggregator finalized and cleared.")
             }
         }
@@ -66,9 +70,31 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         super.init()
     }
 
+    // MARK: - Control Methods (Added for completeness, manage internal state)
+
+    /// Pauses the internal processing of analysis results.
+    /// The SNResultsObserving delegate methods will still be called,
+    /// but the logic within `didProduce` will be skipped.
+    public func pauseMonitoring() {
+        print("SoundEventDetectionObserver: Pausing monitoring.")
+        self.isProcessingActive = false
+    }
+
+    /// Resumes the internal processing of analysis results.
+    public func resumeMonitoring() {
+        print("SoundEventDetectionObserver: Resuming monitoring.")
+        self.isProcessingActive = true
+    }
+
     // MARK: - SNResultsObserving Protocol Methods
 
     func request(_ request: SNRequest, didProduce result: SNResult) {
+        // Only process results if monitoring is active
+        guard isProcessingActive else {
+            print("SoundEventDetectionObserver - Received result, but processing is paused.")
+            return
+        }
+
         print("SnoreDoctorObserver - Received a sound analysis result.")
 
         guard let classificationResult = result as? SNClassificationResult else { return }
@@ -155,6 +181,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         DispatchQueue.main.async {
             self.delegate?.analysisDidFail(error: error)
         }
+        self.isProcessingActive = false // Mark as inactive on failure
     }
 
     func requestDidComplete(_ request: SNRequest) {
@@ -173,6 +200,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         DispatchQueue.main.async {
             self.delegate?.analysisDidComplete()
         }
+        self.isProcessingActive = false // Mark as inactive on completion
     }
 
     // MARK: - Private Helper Methods
@@ -194,8 +222,13 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         session.totalSnoreRelated = Int32(totalSnoreRelatedEventsDetected)
         session.totalNonSnoreEvents = Int32(totalNonSnoreEventsDetected)
 
-        // Set the end time for the session
-        session.endTime = Date()
+        // Only set endTime here if it hasn't been set by MainViewController's stopAudioAnalysis().
+        // MainViewController is responsible for setting endTime when the overall recording stops.
+        // This method is called from `requestDidComplete` and `requestDidFailWithError` in case the
+        // SoundAnalysis request itself ends prematurely, but the main session lifecycle is in MainViewController.
+        // Consider whether `session.endTime = Date()` here is redundant or could overwrite a more accurate time
+        // set by `MainViewController`. For now, I'll comment it out, as MainViewController handles this.
+        // session.endTime = Date()
 
         print("Post-update session counts (in memory): Snore=\(session.totalSnoreEvents), Related=\(session.totalSnoreRelated), Non-Snore=\(session.totalNonSnoreEvents)")
 

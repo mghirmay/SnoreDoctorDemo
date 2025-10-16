@@ -3,6 +3,8 @@ an app to analyse snoring
 
 Question:
 
+this project is aimed to analyse snoring and helping people to quit snoring.  you can help me to make the app to a great product.
+
 i am creating a sleep analysis app. i want analyse the sleeping attitude of a customer.
 i am using the Apple SoundFramework, Chart, Recorder, CoreData to save the raw data.
 

@@ -62,6 +62,7 @@ struct SoundEventListView: View {
     }
 
     // MARK: - Playback Handler
+    // MARK: - Playback Handler
     private func handleEventPlayback(event: SoundEvent) {
         guard let playbackDelegate = playbackDelegate else {
             print("Playback: No playback delegate available.")
@@ -72,18 +73,30 @@ struct SoundEventListView: View {
             print("Playback: Event '\(event.name ?? "N/A")' is not associated with a RecordingSession.")
             return
         }
-
-        playbackDelegate.loadAudio(for: eventSession)
-        activePlaybackSession = eventSession
-
+        
+        // Capture the desired seek time before the load operation
+        let seekTime: TimeInterval?
         if let eventTimestamp = event.timestamp,
            let actualRecordingStartTime = eventSession.startTime {
-            let seekTime = eventTimestamp.timeIntervalSince(actualRecordingStartTime)
+            seekTime = eventTimestamp.timeIntervalSince(actualRecordingStartTime)
+        } else {
+            seekTime = nil
+            print("Playback Warning: Missing timestamp or session start time for event '\(event.name ?? "N/A")'. Cannot calculate seek time.")
+        }
+
+        // ⭐️ Load audio with a completion handler
+        playbackDelegate.loadAudio(for: eventSession) { success in
+            guard success, let seekTime = seekTime else {
+                print("Playback: Failed to load audio or seek time is invalid.")
+                return
+            }
+            
+            // ⭐️ Execute seek and play ONLY after successful audio loading
             playbackDelegate.seek(to: max(0, seekTime))
             playbackDelegate.play()
-        } else {
-            print("Playback Warning: Missing timestamp or session start time for event '\(event.name ?? "N/A")'.")
         }
+        
+        activePlaybackSession = eventSession // State update can happen immediately
     }
 }
 

@@ -5,15 +5,21 @@
 //  Created by musie Ghirmay on 14.07.25.
 //
 
-
-// BoxPlotChart.swift
 import SwiftUI
 import Charts
 
 struct BoxPlotChart: View {
     let data: [Double]
     let title: String
-    var yLabel: String? // Optional y-axis label
+    let xLabel: String?
+    let yLabel: String?
+
+    init(data: [Double], title: String, xLabel: String? = nil, yLabel: String? = nil) {
+        self.data = data
+        self.title = title
+        self.xLabel = xLabel
+        self.yLabel = yLabel
+    }
 
     var body: some View {
         VStack {
@@ -24,46 +30,78 @@ struct BoxPlotChart: View {
             if data.isEmpty {
                 Text("No data for this box plot.")
                     .foregroundColor(.gray)
+                    .padding(.vertical, 40)
             } else {
+                let stats = boxPlotStats(for: data)
+
                 Chart {
-                    // For a true box plot, you'd typically calculate quartiles (Q1, Q2/median, Q3), min, max.
-                    // The Charts framework doesn't have a direct "BoxPlotMark".
-                    // You would typically simulate it with RuleMark for whiskers, RectangleMark for the box,
-                    // and PointMark for median/outliers.
-                    // For simplicity, let's just show a distribution or a simple bar for now.
-                    // A proper box plot requires statistical calculation.
+                    // Whisker (vertical line from min → max)
+                    RuleMark(
+                        x: .value("Category", "Distribution"),
+                        yStart: .value("Min", stats.min),
+                        yEnd: .value("Max", stats.max)
+                    )
+                    .foregroundStyle(.blue.opacity(0.6))
 
-                    // For a simple histogram-like distribution if a true box plot is complex:
-                    // Using a histogram for distribution, not a true box plot in Charts directly.
-                    // For a real box plot, you'd calculate statistics (min, max, quartiles) and use RuleMarks and RectangleMarks.
-                    // For demonstration, let's just show individual points or a simplified representation.
+                    // Box (Q1 → Q3)
+                    RectangleMark(
+                        x: .value("Category", "Distribution"),
+                        yStart: .value("Q1", stats.q1),
+                        yEnd: .value("Q3", stats.q3)
+                    )
+                    .foregroundStyle(.blue.opacity(0.3))
 
-                    // A more appropriate approach for "Box Plot" is to calculate statistics
-                    // (min, Q1, median, Q3, max) and use RuleMarks and RectangleMarks.
-                    // For now, let's just visualize the data points if a true box plot isn't feasible with direct marks.
-
-                    // If you want to show individual data points on a pseudo-boxplot
-                    ForEach(data.indices, id: \.self) { index in
-                        PointMark(
-                            x: .value("Index", Double(index)), // Or some category
-                            y: .value("Value", data[index])
-                        )
+                    // Median line (horizontal rule across the box)
+                    RuleMark(
+                        y: .value("Median", stats.median)
+                    )
+                    .annotation(position: .trailing) {
+                        Text(String(format: "%.2f", stats.median))
+                            .font(.caption2)
+                            .foregroundColor(.blue)
                     }
-                    // A proper box plot would involve more complex statistical calculations
-                    // and combining RuleMark and RectangleMark.
-                    // e.g., RuleMark(y: .value("Q1", q1)...)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .foregroundStyle(.blue)
                 }
-                .chartYAxis {
-                    if let yLabel = yLabel {
-                        AxisMarks {
-                            AxisGridLine()
-                            AxisTick()
-                            AxisValueLabel(yLabel)
-                        }
-                    }
+                .chartYAxisLabel(yLabel ?? "")
+                .chartXAxisLabel(xLabel ?? "")
+                .chartPlotStyle { plot in
+                    plot.frame(minHeight: 200)
                 }
-                .chartXAxis(.hidden) // Box plots often don't have a meaningful X-axis from individual data points
+                .padding()
             }
         }
     }
+
+    // MARK: - Compute Box Plot Statistics
+    func boxPlotStats(for values: [Double]) -> (min: Double, q1: Double, median: Double, q3: Double, max: Double) {
+        let sorted = values.sorted()
+        guard !sorted.isEmpty else { return (0, 0, 0, 0, 0) }
+        let count = sorted.count
+
+        func quantile(_ q: Double) -> Double {
+            let pos = q * Double(count - 1)
+            let lower = Int(floor(pos))
+            let upper = Int(ceil(pos))
+            if lower == upper { return sorted[lower] }
+            return sorted[lower] + (pos - Double(lower)) * (sorted[upper] - sorted[lower])
+        }
+
+        return (
+            min: sorted.first ?? 0,
+            q1: quantile(0.25),
+            median: quantile(0.5),
+            q3: quantile(0.75),
+            max: sorted.last ?? 0
+        )
+    }
+}
+
+#Preview {
+    BoxPlotChart(
+        data: [1.2, 2.5, 3.8, 4.1, 5.0, 6.3, 7.8, 8.0],
+        title: "Sleep Confidence",
+        xLabel: "Distribution",
+        yLabel: "Confidence"
+    )
 }

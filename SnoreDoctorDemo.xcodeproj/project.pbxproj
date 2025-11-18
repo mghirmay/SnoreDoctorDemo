@@ -26,6 +26,7 @@
 		9676F65B2E130D6700B7645F /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 9676F65A2E130D6700B7645F /* LICENSE */; };
 		968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7892E11AD68009F5DB2 /* SettingsView.swift */; };
 		968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD78D2E11B445009F5DB2 /* AppSettings.swift */; };
+		969D3DC32EA2DC2C007767DA /* SnoreEventListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 969D3DC22EA2DC2C007767DA /* SnoreEventListView.swift */; };
 		96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BDA72E2E12042D00DB5364 /* EventMarker.swift */; };
 		96C8DE802E280FA900549E31 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C8DE7F2E280FA900549E31 /* SessionDetailView.swift */; };
 		96DA36462E122736001D8F43 /* SnoreDoctorChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DA36432E122736001D8F43 /* SnoreDoctorChartView.swift */; };
@@ -87,6 +88,7 @@
 		9676F65A2E130D6700B7645F /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		968CD7892E11AD68009F5DB2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		968CD78D2E11B445009F5DB2 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		969D3DC22EA2DC2C007767DA /* SnoreEventListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreEventListView.swift; sourceTree = "<group>"; };
 		96B49EAC2DCFDB9200D779F9 /* SnoreDoctorDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnoreDoctorDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		96B49EC22DCFDB9300D779F9 /* SnoreDoctorDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnoreDoctorDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96B49ECC2DCFDB9300D779F9 /* SnoreDoctorDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnoreDoctorDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -211,6 +213,7 @@
 		968CD77F2E119D77009F5DB2 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */,
 				96F682332E30355E00841E70 /* AudioAnalysisError.swift */,
 				96F682052E2D980B00841E70 /* AudioPlaybackViewModel.swift */,
 				96F681D72E2D950800841E70 /* AudioManager.swift */,
@@ -271,6 +274,7 @@
 		96DA36682E1231FA001D8F43 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
+				969D3DC22EA2DC2C007767DA /* SnoreEventListView.swift */,
 				96C8DE7F2E280FA900549E31 /* SessionDetailView.swift */,
 				96DDD8D42E259D9C0076F298 /* BoxPlotChart.swift */,
 				96DDD8D22E259D8D0076F298 /* LineChart.swift */,
@@ -282,7 +286,6 @@
 				96DA366F2E123489001D8F43 /* SoundEventType.swift */,
 				96DA366B2E123258001D8F43 /* ChartColorProvider.swift */,
 				96DA36432E122736001D8F43 /* SnoreDoctorChartView.swift */,
-				96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */,
 				96DA367D2E124072001D8F43 /* SoundEventListView.swift */,
 			);
 			path = Chart;
@@ -482,6 +485,7 @@
 				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
 				96630FB12E20757B00C80E1B /* DataManagementSection.swift in Sources */,
 				96F682342E30355E00841E70 /* AudioAnalysisError.swift in Sources */,
+				969D3DC32EA2DC2C007767DA /* SnoreEventListView.swift in Sources */,
 				96630FAB2E2074CA00C80E1B /* PostProcessingSection.swift in Sources */,
 				96DDD8D52E259D9C0076F298 /* BoxPlotChart.swift in Sources */,
 				964214212E19882F0021CCA5 /* Date+Extensions.swift in Sources */,
@@ -542,7 +546,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = REN224BC53;
+				DEVELOPMENT_TEAM = ZZYE6PCN4J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoctor;
@@ -577,7 +581,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = REN224BC53;
+				DEVELOPMENT_TEAM = ZZYE6PCN4J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoctor;

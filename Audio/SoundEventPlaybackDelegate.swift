@@ -11,7 +11,6 @@ import AVFoundation
 import Combine
 import CoreData
 
-// Assuming SoundEventPlaybackDelegate is defined elsewhere
 protocol SoundEventPlaybackDelegate: AnyObject {
     func seek(to time: TimeInterval)
     func play()
@@ -20,5 +19,10 @@ protocol SoundEventPlaybackDelegate: AnyObject {
     func togglePlayback()
     func stopPlayback()
     func loadAudio(fileName: String)
-    func loadAudio(for session: RecordingSession)
+    // ⭐️ MODIFIED: Added completion handler to signal readiness
+    func loadAudio(for session: RecordingSession, completion: @escaping (Bool) -> Void)
+    
+    // ⭐️ NEW FUNCTION to handle SnoreEvent-specific playback
+    func seekAndPlaySnoreEvent(session: RecordingSession, startTime: Date, duration: TimeInterval)
+    
 }

@@ -1,11 +1,10 @@
-// AudioPlaybackViewModel.swift (Example structure)
 import Foundation
 import AVFoundation
-import Combine
-import CoreData
+import CoreData // Required for NSManagedObjectID, assuming RecordingSession is a Core Data entity
+import QuartzCore // Required for CADisplayLink
 
-// FIX: Make AudioPlaybackViewModel inherit from NSObject
-class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDelegate { // <-- Add NSObject here
+
+class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDelegate { // Inherits from NSObject
     @Published var isPlaying: Bool = false
     @Published var currentTime: TimeInterval = 0.0
     @Published var duration: TimeInterval = 0.0
@@ -18,7 +17,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
     private var currentLoadedAudioFileName: String?
 
     // Function to load and prepare an audio file
-    func setupAudioPlayer(url: URL) { // Keep this for now, but consider removing as discussed
+    func setupAudioPlayer(url: URL) {
         audioPlayer?.stop()
         audioPlayer = nil
         isPlaying = false
@@ -26,9 +25,10 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.volume = 1.0 // Range: 0.0 (mute) to 1.0 (max)
+            audioPlayer?.volume = 1.0
             audioPlayer?.prepareToPlay()
-            audioPlayer?.delegate = self // This will now be valid
+            audioPlayer?.delegate = self // The ViewModel (self) is now a valid delegate
+            duration = audioPlayer?.duration ?? 0.0
             print("Audio player setup for URL: \(url.lastPathComponent)")
         } catch {
             print("Error setting up audio player for \(url.lastPathComponent): \(error.localizedDescription)")
@@ -119,7 +119,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: audioFileURL)
             audioPlayer?.volume = 1.0
-            audioPlayer?.delegate = self // This will now work
+            audioPlayer?.delegate = self // Set delegate
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0.0
             currentTime = 0.0
@@ -136,61 +136,133 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
         }
     }
 
-    func loadAudio(for session: RecordingSession) {
+    
+  
+    // MARK: - SoundEventPlaybackDelegate Conformance (Rewritten)
+
+    // The protocol method signature should be:
+    // func loadAudio(for session: RecordingSession, completion: @escaping (Bool) -> Void)
+    // We are implementing the logic for this new signature.
+
+    func loadAudio(for session: RecordingSession, completion: @escaping (Bool) -> Void) {
+        // 1. Check if the correct audio is ALREADY loaded
         guard currentLoadedSessionID != session.objectID else {
             print("Audio for session \(session.title ?? "N/A") already loaded.")
+            
+            // Ensure properties are updated and signal success immediately
             audioPlayer?.prepareToPlay()
             duration = audioPlayer?.duration ?? 0.0
             if !isPlaying { currentTime = 0.0 }
+            
+            completion(true) // Signal success right away
             return
         }
 
         stopPlayback()
         unloadAudio()
 
+        // 2. Validate essential data
         guard let fileName = session.audioFileName, !fileName.isEmpty else {
             errorMessage = "Recording session has no audio file name."
             currentLoadedSessionID = nil
             currentLoadedAudioFileName = nil
+            completion(false) // Signal failure
             return
         }
 
+        // 3. Construct file URL
         guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
             errorMessage = "Could not find documents directory."
-            currentLoadedSessionID = nil
-            currentLoadedAudioFileName = nil
+            completion(false) // Signal failure
             return
         }
         let audioFileURL = documentsDirectory.appendingPathComponent(fileName)
 
+        // 4. Check if file exists
         guard FileManager.default.fileExists(atPath: audioFileURL.path) else {
             errorMessage = "Audio file not found at path: \(audioFileURL.lastPathComponent)"
             print("Error: Audio file not found at path: \(audioFileURL.path)")
-            currentLoadedSessionID = nil
-            currentLoadedAudioFileName = nil
+            completion(false) // Signal failure
             return
         }
 
+        // 5. Load and prepare AVAudioPlayer
         do {
+            // Setup new player
             audioPlayer = try AVAudioPlayer(contentsOf: audioFileURL)
             audioPlayer?.volume = 1.0
-            audioPlayer?.delegate = self // This will now work
-            audioPlayer?.prepareToPlay()
+            audioPlayer?.delegate = self
+            audioPlayer?.prepareToPlay() // This prepares the buffer, making seeking possible
+
+            // Update view model state
             duration = audioPlayer?.duration ?? 0.0
             currentTime = 0.0
             errorMessage = nil
             currentLoadedSessionID = session.objectID
             currentLoadedAudioFileName = fileName
+            
             print("Audio loaded: \(audioFileURL.lastPathComponent), Duration: \(duration) seconds")
+            
+            // ⭐️ Signal success after player setup
+            completion(true)
         } catch {
+            // Handle setup error
             errorMessage = "Failed to load audio file: \(error.localizedDescription)"
             duration = 0.0
             currentLoadedSessionID = nil
             currentLoadedAudioFileName = nil
             print("Error loading audio: \(error.localizedDescription)")
+            
+            // ⭐️ Signal failure after error
+            completion(false)
         }
     }
+    
+    func seekAndPlaySnoreEvent(session: RecordingSession, startTime: Date, duration: TimeInterval) {
+        guard let player = audioPlayer,
+              let sessionStartTime = session.startTime else {
+            print("Playback Error: Player or session start time not ready.")
+            return
+        }
 
+        // 1. Calculate Seek Time with Context
+        let contextTime: TimeInterval = 1.0 // Start 1 second before the event for context
+        let eventSeekTime = startTime.timeIntervalSince(sessionStartTime)
+        let finalSeekTime = max(0.0, eventSeekTime - contextTime)
+        
+        // Total playback time is the context time plus the snore event's duration
+        let totalPlaybackDuration = contextTime + duration
+
+        // 2. Clear any previous stop schedule (optional, but good practice if calling quickly)
+        // NOTE: For a production app, you might use a cancellable DispatchWorkItem here.
+        // For this simple example, we rely on the new scheduled task.
+        
+        // 3. Perform Seek
+        player.currentTime = finalSeekTime
+        self.currentTime = player.currentTime
+
+        // 4. Start Playback
+        self.play()
+
+        // 5. Schedule Stop Action After Duration
+        DispatchQueue.main.asyncAfter(deadline: .now() + totalPlaybackDuration) {
+            // Ensure the player is still active and playing the expected audio
+            guard player.isPlaying else {
+                return // Already stopped by user or finished naturally
+            }
+            
+            // Stop playback
+            self.pause()
+            
+            // Optional: Seek back to the start of the snore event (without context time)
+            // to keep the slider positioned on the event after pausing.
+            player.currentTime = eventSeekTime
+            self.currentTime = eventSeekTime
+            
+            print("Playback automatically stopped after \(totalPlaybackDuration) seconds.")
+        }
+    }
+    
     func unloadAudio() {
         stopPlayback()
         audioPlayer = nil
@@ -203,6 +275,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
     private func startUpdatingPlaybackTime() {
         stopUpdatingPlaybackTime()
+        // Use self as the target since it inherits from NSObject and the selector is @objc
         displayLink = CADisplayLink(target: self, selector: #selector(updatePlaybackTime))
         displayLink?.add(to: .current, forMode: .common)
     }
@@ -229,6 +302,7 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
 
 // MARK: - AVAudioPlayerDelegate Conformance
 extension AudioPlaybackViewModel: AVAudioPlayerDelegate {
+    // Called when a sound has finished playing.
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         DispatchQueue.main.async {
             self.isPlaying = false
@@ -238,6 +312,7 @@ extension AudioPlaybackViewModel: AVAudioPlayerDelegate {
         }
     }
 
+    // Called when an audio file decode error has occurred.
     func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         DispatchQueue.main.async {
             self.errorMessage = "Audio decoding error: \(error?.localizedDescription ?? "Unknown error")"
@@ -247,4 +322,3 @@ extension AudioPlaybackViewModel: AVAudioPlayerDelegate {
         }
     }
 }
-

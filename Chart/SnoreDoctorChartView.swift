@@ -118,7 +118,7 @@ struct SnoreDoctorChartView: View {
                             )
                             .frame(minHeight: 400)
                         } else {
-                            SoundEventListView(
+                            SnoreEventListView(
                                 session: selectedRecordingSession,
                                 playbackDelegate: playbackViewModel
                             )

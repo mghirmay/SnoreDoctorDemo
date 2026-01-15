@@ -1,8 +1,8 @@
 //
-//  MainViewController.swift
-//  SnoreDoctorDemo
+//  MainViewController.swift
+//  SnoreDoctorDemo
 //
-//  Created by musie Ghirmay on 08.05.25.
+//  Created by musie Ghirmay on 08.05.25.
 //
 
 import UIKit
@@ -10,13 +10,14 @@ import SoundAnalysis
 import AVFoundation
 import SwiftUI // Import SwiftUI to use UIHostingController
 import CoreData // Import CoreData
+import CoreML
+import Combine // Import Combine for reactive handling
 
-// Make sure your custom error type is accessible, e.g., in Errors.swift
-// If it's not globally accessible, you might need to make it public or include it here.
-// For demonstration, let's assume it's in a separate file and public.
-// import AudioAnalysisError // If you have a dedicated file
+// Assume AudioAnalysisError, PersistenceController, AudioRecorder, AudioManager,
+// RecordingSession, MulticastServiceViewModel, and helper extensions exist elsewhere.
 
 class MainViewController: UIViewController, UIPopoverPresentationControllerDelegate {
+    
 
     // MARK: - Properties
 
@@ -31,21 +32,19 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     @IBOutlet weak var sessionsTableView: UITableView!
 
     private var currentRecordingSession: RecordingSession? // Manages Core Data session object
-
-    private var audioEngine: AVAudioEngine? // Handles real-time audio input
-    private var audioStreamAnalyzer: SNAudioStreamAnalyzer? // For SoundAnalysis framework
-
-    private let analysisQueue = DispatchQueue(label: "de.sinitpower.SnoreDoctor.analysisQueue")
-
-    private var soundClassifierRequest: SNClassifySoundRequest?
+    
+    // 🔥 NEW: Combine subscription to monitor the SoundRecognitionManager's output
+    private var analysisSubscription: AnyCancellable?
+    // The following properties were removed as they are now managed by SoundRecognitionManager.shared:
+    // private var audioEngine: AVAudioEngine?
+    // private var audioStreamAnalyzer: SNAudioStreamAnalyzer?
+    // private let analysisQueue = DispatchQueue(...)
+    // private var soundClassifierRequest: SNClassifySoundRequest?
+    private lazy var resultsObserver = SoundEventDetectionObserver(delegate: self)
 
     // Instances of your managers
     private let audioRecorder = AudioRecorder()
     private let audioManager = AudioManager.shared // Use the singleton AudioManager
-
-    // Using lazy var to ensure resultsObserver is initialized when first accessed
-    // and is holding a weak reference to self.
-    private lazy var resultsObserver = SoundEventDetectionObserver(delegate: self)
 
     // NSFetchedResultsController for RecordingSessions
     private lazy var fetchedResultsController: NSFetchedResultsController<RecordingSession> = {
@@ -74,7 +73,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         super.viewDidLoad()
 
         setupUI()
-        setupAudioAnalysisComponents()
+        // setupAudioAnalysisComponents is no longer needed
         setupFetchedResultsController()
         setupNotificationObservers()
 
@@ -90,6 +89,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     deinit {
         // Ensure all audio resources are stopped and released
         stopAudioAnalysis()
+        // Cancel the Combine subscription
+        analysisSubscription?.cancel()
         // Remove all observers to prevent memory leaks
         NotificationCenter.default.removeObserver(self)
         print("MainViewController deinitialized")
@@ -110,22 +111,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         multicastViewModel.start()
     }
 
-    private func setupAudioAnalysisComponents() {
-        do {
-            soundClassifierRequest = try SNClassifySoundRequest(classifierIdentifier: .version1)
-
-            let windowDuration = UserDefaults.standard.analysisWindowDuration
-            let overlapFactor = UserDefaults.standard.analysisOverlapFactor
-
-            soundClassifierRequest?.windowDuration = CMTime(seconds: windowDuration, preferredTimescale: 1000)
-            soundClassifierRequest?.overlapFactor = overlapFactor
-
-        } catch {
-            print("Failed to create sound classification request: \(error.localizedDescription)")
-            updateResultsTextView(with: "Error: Could not load sound classifier. \(error.localizedDescription)\n")
-            analysisButton?.isEnabled = false // Disable analysis if model fails to load
-        }
-    }
+    // setupAudioAnalysisComponents is removed as logic is now in SoundRecognitionManager
+    
 
     private func setupFetchedResultsController() {
         do {
@@ -138,28 +125,23 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     private func setupNotificationObservers() {
-        // Listen for audio session interruption and media services reset notifications from AudioManager
+        // 🔥 REMOVED: Audio session interruption and media services reset notifications
+        // are now handled internally by SoundRecognitionManager, which will send a
+        // .failure signal via Combine.
+
+        // We only keep the Media Services Reset handler here as an emergency stop,
+        // in case the internal manager fails to catch a critical system failure.
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleAudioSessionInterruptionBegan),
-                                               name: .audioSessionInterruptionBegan,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleAudioSessionInterruptionEndedShouldResume),
-                                               name: .audioSessionInterruptionEndedShouldResume,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleAudioSessionInterruptionEndedCouldNotResume),
-                                               name: .audioSessionInterruptionEndedCouldNotResume,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleMediaServicesReset),
-                                               name: .mediaServicesReset,
-                                               object: nil)
+                                                selector: #selector(handleMediaServicesReset),
+                                                name: .mediaServicesReset,
+                                                object: nil)
     }
 
     // MARK: - Microphone Permission
 
     private func requestMicrophonePermission() {
+        // We still request permission here for initial UI state setup,
+        // but the SoundRecognitionManager performs its own check during startRecognition.
         AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -196,14 +178,13 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     // MARK: - Audio Analysis Control
 
     @IBAction func toggleAnalysis(_ sender: UIButton) {
-        if audioEngine == nil { // Or audioStreamAnalyzer == nil, they should be consistent
-            startAudioAnalysis()
-            UIApplication.shared.isIdleTimerDisabled = true  // 👈 Keeps screen/CPU active
-          
-        } else {
+        // 🔥 Check state using the manager's public `isRunning` property
+        if SoundRecognitionManager.shared.isRunning {
             stopAudioAnalysis()
-            UIApplication.shared.isIdleTimerDisabled = false  // 👈 Let the system sleep again
-
+            UIApplication.shared.isIdleTimerDisabled = false
+        } else {
+            startAudioAnalysis()
+            UIApplication.shared.isIdleTimerDisabled = true
         }
     }
 
@@ -212,7 +193,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             updateResultsTextView(with: "Microphone permission not granted or analysis disabled.\n")
             return
         }
-        guard audioEngine == nil else {
+        guard !SoundRecognitionManager.shared.isRunning else {
             updateResultsTextView(with: "Audio analysis is already running. \n")
             return
         }
@@ -220,12 +201,12 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         updateResultsTextView(with: "Starting audio analysis... \n", append: false)
 
         do {
-            // Start audio recording to file (this also configures AVAudioSession)
+            // 1. Start file recording (AudioRecorder still handles this)
             guard let initialRecordingURL = try audioRecorder.startAndGetRecordingURL() else {
                 throw AudioAnalysisError.invalidState("Failed to obtain initial recording URL from AudioRecorder.")
             }
 
-            // Create a new Core Data RecordingSession
+            // 2. Create a new Core Data RecordingSession
             let context = PersistenceController.shared.container.viewContext
             let newSession = RecordingSession(context: context)
             newSession.id = UUID()
@@ -240,34 +221,44 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             self.currentRecordingSession = newSession
             resultsObserver.currentRecordingSession = newSession // Pass to the observer
 
+           
             print("Recording session started for file: \(newSession.audioFileName ?? "undefined filename")")
 
-            // Setup AVAudioEngine for real-time analysis
-            let newAudioEngine = AVAudioEngine()
-            let inputNode = newAudioEngine.inputNode
-            let recordingFormat = inputNode.outputFormat(forBus: 0)
+            // 3. Start the sound recognition service and listen for results
+            setupAnalysisSubscription()
+           
 
-            audioStreamAnalyzer = SNAudioStreamAnalyzer(format: recordingFormat)
-
-            guard let analyzer = audioStreamAnalyzer, let request = soundClassifierRequest else {
-                throw AudioAnalysisError.invalidState("Failed to initialize audio stream analyzer or sound classifier request.")
-            }
-
-            // Install tap on the input node to feed audio to the analyzer
-            let bufferSize = AVAudioFrameCount(2048)
-            inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: recordingFormat) { [weak self] (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
-                guard let self = self else { return }
-                self.analysisQueue.async {
-                    analyzer.analyze(buffer, atAudioFramePosition: when.sampleTime)
+             // 4. Start the Engine using the Manager
+            Task { @MainActor in // ✅ EXECUTE ON MAIN THREAD
+                do {
+                    // Disable interaction while the async start process is happening
+                    analysisButton?.isEnabled = false
+                    
+                    try await SoundRecognitionManager.shared.startRecognition(
+                        observer: resultsObserver,
+                        windowDuration: UserDefaults.standard.analysisWindowDuration,
+                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                    )
+                    
+                    // ✅ SUCCESS
+                    updateResultsTextView(with: "Analysis started.\n")
+                    updateAnalysisButtonState(isRecording: true)
+                    
+                } catch {
+                    // ✅ FAILURE & RESET
+                    updateResultsTextView(with: "❌ Failed to start: \(error.localizedDescription)\n")
+                    
+                    // Important: Reset the UI state if start fails
+                    updateAnalysisButtonState(isRecording: false)
+                    
+                    // Force a cleanup (just in case partial setup occurred)
+                    SoundRecognitionManager.shared.stopRecognition()
                 }
+                
+                // Re-enable button after attempt finishes (success or fail)
+                analysisButton?.isEnabled = true
             }
-
-            try analyzer.add(request, withObserver: resultsObserver)
-            try newAudioEngine.start()
-            print("Audio engine started.")
-            self.audioEngine = newAudioEngine
-            updateResultsTextView(with: "Analysis started.\n")
-            updateAnalysisButtonState(isRecording: true)
+           
 
         } catch let error as AudioAnalysisError {
             print("Audio analysis setup failed: \(error.localizedDescription)")
@@ -283,32 +274,84 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     private func stopAudioAnalysis() {
-        // Remove tap from input node
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        // Stop audio engine
-        audioEngine?.stop()
-        audioEngine = nil
+        // 1. Stop recognition in the singleton
+        SoundRecognitionManager.shared.stopRecognition()
 
-        // Remove all analysis requests
-        audioStreamAnalyzer?.removeAllRequests()
-        audioStreamAnalyzer = nil
+        // 2. Cancel the Combine subscription
+        analysisSubscription?.cancel()
+        analysisSubscription = nil
 
-        // Stop the file recording and deactivate audio session
+        // 3. Stop the file recording
         _ = audioRecorder.stopAndGetRecordingURL()
-
-        // Update Core Data session end time and save
+        
+        // 4. Update Core Data session end time and save
         if let session = self.currentRecordingSession {
             session.endTime = Date() // Set the end time for the session
             resultsObserver.updateSessionCountsAndSave() // Ensure counts are saved
             PersistenceController.shared.save() // Save the updated session
             resultsObserver.currentRecordingSession = nil // Clear session from observer
         }
+        
         self.currentRecordingSession = nil // Clear current session from ViewController
 
         updateResultsTextView(with: "Analysis stopped.\n")
         updateAnalysisButtonState(isRecording: false)
     }
 
+    // MARK: - Combine Result Handling
+    private func setupAnalysisSubscription() {
+        analysisSubscription = SoundRecognitionManager.shared.classificationSubject
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { [weak self] completion in
+                switch completion {
+                case .finished:
+                    self?.analysisDidComplete()
+                case .failure(let error):
+                    self?.analysisDidFail(error: error)
+                }
+            }, receiveValue: { _ in
+                // ⚠️ IGNORE VALUES HERE
+                // We ignore the classification result here because `resultsObserver`
+                // is already handling the data and calling `didDetectSoundEvent`.
+                //self?.handleClassificationResult(classificationResult)
+            })
+    }
+   
+
+    private func handleClassificationResult(_ result: SNClassificationResult) {
+        guard let session = currentRecordingSession else {
+            print("Warning: Received classification result but no active session.")
+            return
+        }
+
+        // --- Log Generation (Simplified from old observer logic) ---
+        let sortedClassifications = result.classifications.sorted { $0.confidence > $1.confidence }
+        
+        guard let topClassification = sortedClassifications.first else { return }
+
+        // Only log if confidence meets a threshold (e.g., 90%)
+        // Assuming 'confidenceThreshold' exists in UserDefaults
+        let confidenceThreshold = UserDefaults.standard.float(forKey: "confidenceThreshold")
+        
+        if topClassification.confidence >= Double(confidenceThreshold) {
+            
+            let eventName = topClassification.identifier
+            let confidence = String(format: "%.2f", topClassification.confidence)
+            let timestamp = String(format: "%.2f", result.timeRange.start.seconds)
+
+            // Example log string
+            let logString = "[\(timestamp)s] Detected: **\(eventName)** (\(confidence))\n"
+
+            // 4. Update UI and Multicast
+            updateResultsTextView(with: logString)
+            multicastViewModelSendData(data: logString)
+            
+            // 🔥 REMINDER: Add logic here to update the currentRecordingSession's counts
+            // e.g., if eventName == "Snoring" { session.snoreCount += 1 }
+        }
+    }
+
+   
     // MARK: - UI Update Helpers
 
     private func updateResultsTextView(with text: String, append: Bool = true) {
@@ -352,7 +395,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     @IBAction func showSoundChart(_ sender: UIButton) {
         let managedObjectContext = PersistenceController.shared.container.viewContext
 
-        let isCurrentSessionRecording = (self.currentRecordingSession != nil && self.audioEngine != nil)
+        // 🔥 Check state using the manager's public `isRunning` property
+        let isCurrentSessionRecording = (self.currentRecordingSession != nil && SoundRecognitionManager.shared.isRunning)
         let currentLiveSessionID = self.currentRecordingSession?.id
 
         let initialChartSessionID: UUID?
@@ -419,54 +463,31 @@ extension MainViewController: SoundEventDetectionObserverDelegate {
         multicastViewModelSendData(data: logString)
     }
 
-    func analysisDidFail(error: Error) {
+    
+     func analysisDidFail(error: Error) {
         updateResultsTextView(with: "Error during analysis: \(error.localizedDescription)\n")
-        stopAudioAnalysis() // Attempt to stop analysis on error
-        showAlert(title: "Analysis Error", message: "An error occurred during analysis: \(error.localizedDescription)")
+        // Since SoundRecognitionManager calls stopRecognition internally upon failure,
+        // we just need to update the UI state.
+        self.currentRecordingSession?.endTime = Date() // Mark session as stopped
+        PersistenceController.shared.save()
+        self.currentRecordingSession = nil
+        
+        updateAnalysisButtonState(isRecording: false)
+        showAlert(title: "Analysis Stopped", message: "Analysis stopped due to an error: \(error.localizedDescription)")
     }
 
-    func analysisDidComplete() {
+     func analysisDidComplete() {
         updateResultsTextView(with: "Analysis completed.\n")
-        stopAudioAnalysis() // Analysis completed, stop fully
+        stopAudioAnalysis() // Ensures full teardown and save
         showAlert(title: "Analysis Complete", message: "Your recording session has ended.")
     }
-}
 
-// MARK: - Audio Session Notification Handlers
+}
+// MARK: - Audio Session Notification Handlers (Minimal)
 
 extension MainViewController {
-    @objc private func handleAudioSessionInterruptionBegan() {
-        DispatchQueue.main.async {
-            self.updateResultsTextView(with: "Audio session interrupted. Analysis paused.\n")
-            self.audioEngine?.pause() // Pause the audio engine
-            self.resultsObserver.pauseMonitoring() // Tell your observer to pause if it has state
-            self.updateAnalysisButtonState(isRecording: false) // Update UI
-        }
-    }
-
-    @objc private func handleAudioSessionInterruptionEndedShouldResume() {
-        DispatchQueue.main.async {
-            self.updateResultsTextView(with: "Audio session resumed. Attempting to restart analysis.\n")
-            do {
-                try self.audioEngine?.start()
-                self.resultsObserver.resumeMonitoring() // Tell your observer to resume
-                self.updateAnalysisButtonState(isRecording: true) // Update UI
-            } catch {
-                self.updateResultsTextView(with: "Failed to restart audio engine after interruption: \(error.localizedDescription)\n")
-                self.stopAudioAnalysis() // If restart fails, stop gracefully
-                self.showAlert(title: "Analysis Issue", message: "Could not resume analysis after interruption. Please restart manually.")
-            }
-        }
-    }
-
-    @objc private func handleAudioSessionInterruptionEndedCouldNotResume() {
-        DispatchQueue.main.async {
-            self.updateResultsTextView(with: "Audio session could not resume. Analysis stopped.\n")
-            self.stopAudioAnalysis() // Force stop the analysis
-            self.showAlert(title: "Analysis Stopped", message: "Audio session could not resume. Your analysis session has ended.")
-        }
-    }
-
+    
+    // This remains as a fail-safe for critical system failures not caught by the manager.
     @objc private func handleMediaServicesReset() {
         DispatchQueue.main.async {
             self.updateResultsTextView(with: "Critical: Audio services reset by system. Analysis stopped.\n")
@@ -474,6 +495,10 @@ extension MainViewController {
             self.showAlert(title: "System Audio Reset", message: "The audio system experienced a critical error. Please try starting a new analysis session. If the problem persists, restarting the app might help.")
         }
     }
+    
+    // Removed: handleAudioSessionInterruptionBegan
+    // Removed: handleAudioSessionInterruptionEndedShouldResume
+    // Removed: handleAudioSessionInterruptionEndedCouldNotResume
 }
 
 // MARK: - UITableViewDataSource

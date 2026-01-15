@@ -10,10 +10,12 @@
 // Errors.swift (or similar)
 import Foundation
 
+
 enum AudioAnalysisError: Error, LocalizedError {
     case audioSessionSetupFailed(Error)
     case recordingSetupFailed(Error)
     case permissionDenied
+    case audioStreamInterrupted
     case invalidState(String)
     case unexpected(Error)
 
@@ -25,6 +27,9 @@ enum AudioAnalysisError: Error, LocalizedError {
             return "Failed to set up audio recording: \(error.localizedDescription)"
         case .permissionDenied:
             return "Microphone permission denied. Please enable it in Settings."
+        case .audioStreamInterrupted:
+            return "The audio session was interrupted by the system (e.g., phone call)."
+ 
         case .invalidState(let message):
             return "Invalid app state: \(message)"
         case .unexpected(let error):

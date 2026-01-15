@@ -46,7 +46,7 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             // This setup call will ensure the session is active with appropriate background settings
             try AudioManager.shared.setupAudioSessionForRecording(
                 category: .playAndRecord,
-                mode: .measurement,
+                mode: .default,
                 options: [.mixWithOthers, .allowBluetooth] // Essential options for background audio and flexibility
             )
         } catch {

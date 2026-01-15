@@ -1,0 +1,13 @@
+{
+  "MLModelVersionStringKey" : "--",
+  "MLModelDescriptionKey" : "--",
+  "MLModelCreatorDefinedKey" : {
+    "com.apple.createml.version" : "14.6.1",
+    "com.apple.createml.app.tag" : "150.3",
+    "com.apple.createml.app.version" : "6.1",
+    "sampleRate" : "16000",
+    "com.apple.coreml.model.preview.type" : "soundClassifier"
+  },
+  "MLModelAuthorKey" : "musie Ghirmay",
+  "MLModelLicenseKey" : "--"
+}

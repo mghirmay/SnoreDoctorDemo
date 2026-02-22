@@ -22,9 +22,25 @@
 		96630FB12E20757B00C80E1B /* DataManagementSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96630FB02E20757B00C80E1B /* DataManagementSection.swift */; };
 		96630FB32E207B5D00C80E1B /* SettingSliderInt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96630FB22E207B5D00C80E1B /* SettingSliderInt.swift */; };
 		966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */; };
+		967D386F2F2B01550032FDEE /* Sound 12.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38682F2B01550032FDEE /* Sound 12.wav */; };
+		967D38702F2B01550032FDEE /* Sound 08.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38642F2B01550032FDEE /* Sound 08.wav */; };
+		967D38722F2B01550032FDEE /* Sound 03.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D385F2F2B01550032FDEE /* Sound 03.wav */; };
+		967D38732F2B01550032FDEE /* Sound 05.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38612F2B01550032FDEE /* Sound 05.wav */; };
+		967D38742F2B01550032FDEE /* Sound 02.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D385E2F2B01550032FDEE /* Sound 02.wav */; };
+		967D38752F2B01550032FDEE /* Sound 10.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38662F2B01550032FDEE /* Sound 10.wav */; };
+		967D38762F2B01550032FDEE /* Sound 14.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D386A2F2B01550032FDEE /* Sound 14.wav */; };
+		967D38772F2B01550032FDEE /* Sound 07.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38632F2B01550032FDEE /* Sound 07.wav */; };
+		967D38782F2B01550032FDEE /* Sound 06.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38622F2B01550032FDEE /* Sound 06.wav */; };
+		967D38792F2B01550032FDEE /* Sound 01.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D385D2F2B01550032FDEE /* Sound 01.wav */; };
+		967D387B2F2B01550032FDEE /* Sound 13.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38692F2B01550032FDEE /* Sound 13.wav */; };
+		967D387C2F2B01550032FDEE /* Sound 15.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D386B2F2B01550032FDEE /* Sound 15.wav */; };
+		967D387D2F2B01550032FDEE /* Sound 09.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38652F2B01550032FDEE /* Sound 09.wav */; };
+		967D387E2F2B01550032FDEE /* Sound 11.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38672F2B01550032FDEE /* Sound 11.wav */; };
+		967D387F2F2B01550032FDEE /* Sound 04.wav in Resources */ = {isa = PBXBuildFile; fileRef = 967D38602F2B01550032FDEE /* Sound 04.wav */; };
 		967FD9A12F199A42000B1E50 /* ESC50_Model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 967FC9F12F199A41000B1E50 /* ESC50_Model.mlpackage */; };
 		968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7892E11AD68009F5DB2 /* SettingsView.swift */; };
 		968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD78D2E11B445009F5DB2 /* AppSettings.swift */; };
+		968D4DC62F22F056001A382E /* SnorePlaybackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968D4DC52F22F056001A382E /* SnorePlaybackManager.swift */; };
 		968F989C2F19A48500C55380 /* MySoundClassifier1.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 968F989B2F19A48500C55380 /* MySoundClassifier1.mlpackage */; };
 		968F994F2F19A96F00C55380 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F5C5C7AD2E17278D00D8B49A /* Localizable.strings */; };
 		968F99522F19A9C300C55380 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 968F99512F19A9C300C55380 /* README.md */; };
@@ -87,9 +103,25 @@
 		96630FB02E20757B00C80E1B /* DataManagementSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementSection.swift; sourceTree = "<group>"; };
 		96630FB22E207B5D00C80E1B /* SettingSliderInt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingSliderInt.swift; sourceTree = "<group>"; };
 		966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecordingSession+CoreDataClass.swift"; sourceTree = "<group>"; };
+		967D385D2F2B01550032FDEE /* Sound 01.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 01.wav"; sourceTree = "<group>"; };
+		967D385E2F2B01550032FDEE /* Sound 02.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 02.wav"; sourceTree = "<group>"; };
+		967D385F2F2B01550032FDEE /* Sound 03.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 03.wav"; sourceTree = "<group>"; };
+		967D38602F2B01550032FDEE /* Sound 04.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 04.wav"; sourceTree = "<group>"; };
+		967D38612F2B01550032FDEE /* Sound 05.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 05.wav"; sourceTree = "<group>"; };
+		967D38622F2B01550032FDEE /* Sound 06.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 06.wav"; sourceTree = "<group>"; };
+		967D38632F2B01550032FDEE /* Sound 07.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 07.wav"; sourceTree = "<group>"; };
+		967D38642F2B01550032FDEE /* Sound 08.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 08.wav"; sourceTree = "<group>"; };
+		967D38652F2B01550032FDEE /* Sound 09.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 09.wav"; sourceTree = "<group>"; };
+		967D38662F2B01550032FDEE /* Sound 10.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 10.wav"; sourceTree = "<group>"; };
+		967D38672F2B01550032FDEE /* Sound 11.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 11.wav"; sourceTree = "<group>"; };
+		967D38682F2B01550032FDEE /* Sound 12.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 12.wav"; sourceTree = "<group>"; };
+		967D38692F2B01550032FDEE /* Sound 13.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 13.wav"; sourceTree = "<group>"; };
+		967D386A2F2B01550032FDEE /* Sound 14.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 14.wav"; sourceTree = "<group>"; };
+		967D386B2F2B01550032FDEE /* Sound 15.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Sound 15.wav"; sourceTree = "<group>"; };
 		967FC9F12F199A41000B1E50 /* ESC50_Model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = ESC50_Model.mlpackage; sourceTree = "<group>"; };
 		968CD7892E11AD68009F5DB2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		968CD78D2E11B445009F5DB2 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		968D4DC52F22F056001A382E /* SnorePlaybackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnorePlaybackManager.swift; sourceTree = "<group>"; };
 		968F989B2F19A48500C55380 /* MySoundClassifier1.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = MySoundClassifier1.mlpackage; sourceTree = "<group>"; };
 		968F99512F19A9C300C55380 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		968F99532F19A9D200C55380 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -216,6 +248,28 @@
 			path = Report;
 			sourceTree = "<group>";
 		};
+		967D386E2F2B01550032FDEE /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				967D385D2F2B01550032FDEE /* Sound 01.wav */,
+				967D385E2F2B01550032FDEE /* Sound 02.wav */,
+				967D385F2F2B01550032FDEE /* Sound 03.wav */,
+				967D38602F2B01550032FDEE /* Sound 04.wav */,
+				967D38612F2B01550032FDEE /* Sound 05.wav */,
+				967D38622F2B01550032FDEE /* Sound 06.wav */,
+				967D38632F2B01550032FDEE /* Sound 07.wav */,
+				967D38642F2B01550032FDEE /* Sound 08.wav */,
+				967D38652F2B01550032FDEE /* Sound 09.wav */,
+				967D38662F2B01550032FDEE /* Sound 10.wav */,
+				967D38672F2B01550032FDEE /* Sound 11.wav */,
+				967D38682F2B01550032FDEE /* Sound 12.wav */,
+				967D38692F2B01550032FDEE /* Sound 13.wav */,
+				967D386A2F2B01550032FDEE /* Sound 14.wav */,
+				967D386B2F2B01550032FDEE /* Sound 15.wav */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		967FC9F32F199A41000B1E50 /* AI */ = {
 			isa = PBXGroup;
 			children = (
@@ -228,6 +282,7 @@
 		968CD77F2E119D77009F5DB2 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				968D4DC52F22F056001A382E /* SnorePlaybackManager.swift */,
 				96A24B082ECD3AF40072C1B9 /* SoundRecognitionManager.swift */,
 				96DA367B2E124039001D8F43 /* SoundEventPlaybackDelegate.swift */,
 				96F682332E30355E00841E70 /* AudioAnalysisError.swift */,
@@ -275,6 +330,7 @@
 				96B49EC52DCFDB9300D779F9 /* SnoreDoctorDemoTests */,
 				96B49ECF2DCFDB9300D779F9 /* SnoreDoctorDemoUITests */,
 				96B49EAD2DCFDB9200D779F9 /* Products */,
+				967D386E2F2B01550032FDEE /* Resources */,
 			);
 			sourceTree = "<group>";
 		};
@@ -447,6 +503,21 @@
 			files = (
 				968F99522F19A9C300C55380 /* README.md in Resources */,
 				968F994F2F19A96F00C55380 /* Localizable.strings in Resources */,
+				967D386F2F2B01550032FDEE /* Sound 12.wav in Resources */,
+				967D38702F2B01550032FDEE /* Sound 08.wav in Resources */,
+				967D38722F2B01550032FDEE /* Sound 03.wav in Resources */,
+				967D38732F2B01550032FDEE /* Sound 05.wav in Resources */,
+				967D38742F2B01550032FDEE /* Sound 02.wav in Resources */,
+				967D38752F2B01550032FDEE /* Sound 10.wav in Resources */,
+				967D38762F2B01550032FDEE /* Sound 14.wav in Resources */,
+				967D38772F2B01550032FDEE /* Sound 07.wav in Resources */,
+				967D38782F2B01550032FDEE /* Sound 06.wav in Resources */,
+				967D38792F2B01550032FDEE /* Sound 01.wav in Resources */,
+				967D387B2F2B01550032FDEE /* Sound 13.wav in Resources */,
+				967D387C2F2B01550032FDEE /* Sound 15.wav in Resources */,
+				967D387D2F2B01550032FDEE /* Sound 09.wav in Resources */,
+				967D387E2F2B01550032FDEE /* Sound 11.wav in Resources */,
+				967D387F2F2B01550032FDEE /* Sound 04.wav in Resources */,
 				968F99542F19A9D200C55380 /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -495,6 +566,7 @@
 				96BDA72F2E12042D00DB5364 /* EventMarker.swift in Sources */,
 				96630FB12E20757B00C80E1B /* DataManagementSection.swift in Sources */,
 				96F682342E30355E00841E70 /* AudioAnalysisError.swift in Sources */,
+				968D4DC62F22F056001A382E /* SnorePlaybackManager.swift in Sources */,
 				969D3DC32EA2DC2C007767DA /* SnoreEventListView.swift in Sources */,
 				96630FAB2E2074CA00C80E1B /* PostProcessingSection.swift in Sources */,
 				96DDD8D52E259D9C0076F298 /* BoxPlotChart.swift in Sources */,
@@ -556,6 +628,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SnoreDoctorDemo/SnoreDoctorDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZZYE6PCN4J;
@@ -591,6 +664,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SnoreDoctorDemo/SnoreDoctorDemo.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ZZYE6PCN4J;
@@ -612,6 +687,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.sinitpower.SnoreDoctorDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;

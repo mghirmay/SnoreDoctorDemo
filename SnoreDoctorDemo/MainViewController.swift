@@ -21,7 +21,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
     // MARK: - Properties
 
-    private let multicastViewModel = MulticastServiceViewModel()
+    //private let multicastViewModel = MulticastServiceViewModel()
 
     @IBOutlet weak var resultsTextView: UITextView!
     @IBOutlet weak var analysisButton: UIButton?
@@ -84,8 +84,16 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // No redundant permission checks here; viewDidLoad handles initial request.
+        // Keep the screen awake while the user is monitoring their snoring
+        UIApplication.shared.isIdleTimerDisabled = true
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Give control back to the system when they leave the screen
+        UIApplication.shared.isIdleTimerDisabled = false
+    }
+    
     deinit {
         // Ensure all audio resources are stopped and released
         stopAudioAnalysis()
@@ -108,7 +116,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         updateAnalysisButtonState(isRecording: false) // Set initial state
 
         // Initialize and start multicast service
-        multicastViewModel.start()
+       // multicastViewModel.start()
     }
 
     // setupAudioAnalysisComponents is removed as logic is now in SoundRecognitionManager
@@ -181,10 +189,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         // 🔥 Check state using the manager's public `isRunning` property
         if SoundRecognitionManager.shared.isRunning {
             stopAudioAnalysis()
-            UIApplication.shared.isIdleTimerDisabled = false
         } else {
             startAudioAnalysis()
-            UIApplication.shared.isIdleTimerDisabled = true
         }
     }
 
@@ -233,13 +239,20 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
                 do {
                     // Disable interaction while the async start process is happening
                     analysisButton?.isEnabled = false
-                    
-                    try await SoundRecognitionManager.shared.startRecognition(
-                        observer: resultsObserver,
-                        windowDuration: UserDefaults.standard.analysisWindowDuration,
-                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
-                    )
-                    
+                    if UserDefaults.standard.useCustomLLModel {
+                        try await
+                            SoundRecognitionManager.shared.startRecognition_with_custom_model(
+                            observer: resultsObserver,
+                            windowDuration: UserDefaults.standard.analysisWindowDuration,
+                            overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                        )
+                    }else{
+                        try await SoundRecognitionManager.shared.startRecognition_with_apple_version1_model(
+                            observer: resultsObserver,
+                            windowDuration: UserDefaults.standard.analysisWindowDuration,
+                            overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                        )
+                    }
                     // ✅ SUCCESS
                     updateResultsTextView(with: "Analysis started.\n")
                     updateAnalysisButtonState(isRecording: true)
@@ -386,7 +399,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
     public func multicastViewModelSendData(data: String){
         DispatchQueue.main.async{
-            self.multicastViewModel.send(message: data)
+           // self.multicastViewModel.send(message: data)
         }
     }
 
@@ -415,6 +428,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: chartView)
+        // This tells the hosting controller to let the SwiftUI view
+        // decide how to fill the space, ignoring the UIKit "readable" margins.
+        hostingController.view.backgroundColor = .systemBackground
+        
         hostingController.modalPresentationStyle = .fullScreen
         self.present(hostingController, animated: true, completion: nil)
     }
@@ -440,6 +457,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: sleepReportView)
+        // This tells the hosting controller to let the SwiftUI view
+        // decide how to fill the space, ignoring the UIKit "readable" margins.
+        hostingController.view.backgroundColor = .systemBackground
+        
         hostingController.modalPresentationStyle = .fullScreen
         self.present(hostingController, animated: true, completion: nil)
     }
@@ -450,6 +471,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: settingsView)
+        // This tells the hosting controller to let the SwiftUI view
+        // decide how to fill the space, ignoring the UIKit "readable" margins.
+        hostingController.view.backgroundColor = .systemBackground
+        
         hostingController.modalPresentationStyle = .fullScreen
         self.present(hostingController, animated: true, completion: nil)
     }
@@ -460,7 +485,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 extension MainViewController: SoundEventDetectionObserverDelegate {
     func didDetectSoundEvent(logString: String) {
         updateResultsTextView(with: logString)
-        multicastViewModelSendData(data: logString)
+        //multicastViewModelSendData(data: logString)
     }
 
     
@@ -569,6 +594,10 @@ extension MainViewController: UITableViewDelegate {
             .environment(\.managedObjectContext, managedObjectContext)
 
         let hostingController = UIHostingController(rootView: sessionDetailView)
+        // This tells the hosting controller to let the SwiftUI view
+        // decide how to fill the space, ignoring the UIKit "readable" margins.
+        hostingController.view.backgroundColor = .clear
+        
         hostingController.modalPresentationStyle = .fullScreen
         self.present(hostingController, animated: true)
     }

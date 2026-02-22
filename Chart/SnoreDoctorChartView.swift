@@ -145,7 +145,7 @@ struct SnoreDoctorChartView: View {
         }
         .onDisappear {
             playbackViewModel.stop()
-        }
+        }.navigationViewStyle(.stack)
     }
 
     // MARK: - Predicate Updater

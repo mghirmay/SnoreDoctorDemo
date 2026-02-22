@@ -53,10 +53,9 @@ class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             throw error // Propagate the error from AudioManager setup
         }
 
-        let userDefaults = UserDefaults.standard
-        let preferredFormat = userDefaults.audioFormatPreference
-        let preferredSampleRate = userDefaults.sampleRatePreference
-        let preferredAudioQuality = userDefaults.audioQualityPreference
+        let preferredFormat = UserDefaults.standard.audioFormatPreference
+        let preferredSampleRate = UserDefaults.standard.sampleRatePreference
+        let preferredAudioQuality = UserDefaults.standard.audioQualityPreference
 
         var settings: [String: Any] = [:]
         settings[AVSampleRateKey] = preferredSampleRate

@@ -32,7 +32,7 @@ class SoundRecognitionManager: NSObject {
     }
 
     // MARK: - Public Control
-    func startRecognition(observer: SNResultsObserving,
+    func startRecognition_with_custom_model(observer: SNResultsObserving,
                               windowDuration: Double = 1.5,
                               overlapFactor: Double = 0.9) async throws {
 
@@ -67,7 +67,7 @@ class SoundRecognitionManager: NSObject {
                 }
                 
                 let model = try MLModel(contentsOf: modelURL, configuration: config)
-                // -----------------------
+            
 
                 // 3. Request and Observer Bridge Setup
                 // SoundAnalysis (SNClassifySoundRequest) handles the conversion of audio
@@ -106,7 +106,7 @@ class SoundRecognitionManager: NSObject {
         ///   - observer: Your custom `SoundEventDetectionObserver`.
         ///   - windowDuration: Duration of audio chunks (default 1.5s).
         ///   - overlapFactor: How much windows overlap (default 0.9).
-    func startRecognition_orginal(observer: SNResultsObserving,
+    func startRecognition_with_apple_version1_model(observer: SNResultsObserving,
                               windowDuration: Double = 1.5,
                               overlapFactor: Double = 0.9) async throws {
 
@@ -129,15 +129,9 @@ class SoundRecognitionManager: NSObject {
             self.analyzer = analyzer
 
             
-            let config = MLModelConfiguration()
-            config.computeUnits = .cpuOnly   // CPU-only execution
-            let modelURL = Bundle.main.url(forResource: "MySoundClassifier", withExtension: "mlmodelc")!
-            let model = try MLModel(contentsOf: modelURL, configuration: config)
-
-            
             // 3. Request and Observer Bridge Setup
-            let request = try SNClassifySoundRequest(mlModel: model)
-            //let request = try SNClassifySoundRequest(classifierIdentifier: .version1)
+            //let request = try SNClassifySoundRequest(mlModel: model)
+            let request = try SNClassifySoundRequest(classifierIdentifier: .version1)
            
            
             request.windowDuration = CMTime(seconds: windowDuration, preferredTimescale: 1000)
@@ -221,7 +215,7 @@ class SoundRecognitionManager: NSObject {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             //try audioSession.setCategory(.record, mode: .default)
-            try audioSession.setCategory(.record, mode: .default, options: [.mixWithOthers])
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers])
             try audioSession.setActive(true)
         } catch {
             stopAudioSession()
@@ -270,5 +264,7 @@ class SoundRecognitionManager: NSObject {
         // Terminate the session completely, the calling UI must restart it.
         stopRecognition()
     }
+    
+   
 }
 

@@ -23,6 +23,7 @@ protocol SoundEventDetectionObserverDelegate: AnyObject {
 class SoundEventDetectionObserver: NSObject, SNResultsObserving {
     weak var delegate: SoundEventDetectionObserverDelegate?
     
+    
     // The SoundDataManager and NSManagedObjectContext for Core Data operations
     private let soundDataManager =  SoundDataManager()
     
@@ -33,6 +34,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
 
     // NEW: Internal flag to control if processing of results should occur
     private var isProcessingActive: Bool = true
+
 
     // MARK: - Recording Session and Aggregator
     weak var currentRecordingSession: RecordingSession? {
@@ -88,6 +90,8 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         print("SoundEventDetectionObserver: Resuming monitoring.")
         self.isProcessingActive = true
     }
+    
+
 
     // MARK: - SNResultsObserving Protocol Methods
 
@@ -146,6 +150,13 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
                 DispatchQueue.main.async {
                     self.delegate?.didDetectSoundEvent(logString: outputStringForUI)
                 }
+                
+                // Only play if not already playing to avoid overlapping sounds
+                // Play the random snippet
+                if isSnore {
+                    SnorePlaybackManager.shared.playRandomSound()
+                }
+                
             } else {
                 print("Event '\(identifierToSave)' with confidence \(confidenceToSave) below display threshold (\(requiredConfidence)).")
             }

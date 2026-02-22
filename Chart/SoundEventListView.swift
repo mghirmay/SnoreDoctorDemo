@@ -43,7 +43,7 @@ struct SoundEventListView: View {
                     .foregroundColor(.gray)
             } else {
                 ForEach(soundEvents, id: \.self) { event in
-                    if event.confidence >= AppSettings.defaultSnoreConfidenceThreshold {
+                    if event.confidence >= UserDefaults.standard.snoreConfidenceThreshold {
                         if event.name == "snoring" {
                             SoundEventRowView(
                                 event: event,

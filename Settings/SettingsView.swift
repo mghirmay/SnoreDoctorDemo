@@ -46,7 +46,7 @@ struct SettingsView: View {
                 Text("Clear_Info".translate())
             }
             .onAppear(perform: initializeDefaults)
-        }
+        }.navigationViewStyle(.stack)
     }
 
     private func clearAllData() {
@@ -84,6 +84,10 @@ struct SettingsView: View {
 
     private func initializeDefaults() {
         let defaults = UserDefaults.standard
+        // New: Initialize useCustomLLModel
+        if defaults.object(forKey: "useCustomLLModel") == nil {
+            defaults.useCustomLLModel = AppSettings.defaultUseCustomLLModel
+        }
         if defaults.object(forKey: "snoreConfidenceThreshold") == nil {
             defaults.snoreConfidenceThreshold = AppSettings.defaultSnoreConfidenceThreshold
         }

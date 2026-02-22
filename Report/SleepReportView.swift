@@ -27,44 +27,45 @@ struct SleepReportView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // MARK: - Calendar
-                CalendarView(
-                    selectedDate: $selectedDate,
-                    currentMonth: $currentMonth,
-                    soundDataManager: soundDataManager
-                )
+                // MARK: - Top Section (Calendar and Info side-by-side)
+                HStack(alignment: .top, spacing: 20) {
+                    
+                    // Calendar on the Top-Left
+                    CalendarView(
+                        selectedDate: $selectedDate,
+                        currentMonth: $currentMonth,
+                        soundDataManager: soundDataManager
+                    )
+                    .frame(maxWidth: 400) // 👈 Limits calendar width on iPad
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(12)
+                    
+                    // The "Info View" / Report Content next to it
+                    DailySleepReportView(
+                        selectedDate: selectedDate,
+                        soundDataManager: soundDataManager
+                    )
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
                 .padding()
-
-                Divider()
-                    .padding(.vertical, 5)
-
-                // MARK: - Daily Report for Selected Date
-                DailySleepReportView(
-                    selectedDate: selectedDate,
-                    soundDataManager: soundDataManager
-                )
-                .padding()
-
+                
+                // If DailySleepReportView contains your chart, it will fill the remaining space.
+                // If you have a separate Chart View, place it here:
+                // SnoreDoctorChartView(...)
+                
                 Spacer()
             }
             .navigationTitle("Sleep Report")
             .navigationBarTitleDisplayMode(.inline)
-            // MARK: - Add Done Button Here
-            .toolbar { // Use .toolbar to add items to the navigation bar
-                ToolbarItem(placement: .navigationBarLeading) { // Place it on the leading (left) side
-                    Button("Done") {
-                        dismiss() // Call dismiss to close the view
-                    }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") { dismiss() }
                 }
             }
-            .onAppear {
-                // Optional: Load dummy data only if no sessions exist
-                // Wrap in #if DEBUG to prevent this in production builds
-                #if DEBUG
-              
-                #endif
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
         }
+        .navigationViewStyle(.stack)
     }
 }
 

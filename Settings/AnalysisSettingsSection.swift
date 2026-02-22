@@ -9,12 +9,18 @@ import SwiftUI
 import CoreData
 
 struct AnalysisSettingsSection: View {
+    // Using AppStorage is the cleanest way to bind UserDefaults to SwiftUI Toggles
+    @AppStorage("useCustomLLModel") var useCustomLLModel: Bool = AppSettings.defaultUseCustomLLModel
+    
     @AppStorage("snoreConfidenceThreshold") var confidenceThreshold: Double = AppSettings.defaultSnoreConfidenceThreshold
     @AppStorage("analysisWindowDuration") var analysisWindowDuration: Double = AppSettings.defaultAnalysisWindowDuration
     @AppStorage("analysisOverlapFactor") var analysisOverlapFactor: Double = AppSettings.defaultAnalysisOverlapFactor
 
     var body: some View {
         Section("Analysis Settings".translate()) {
+            Toggle("Use Custom LL Model".translate(), isOn: $useCustomLLModel)
+                            .tint(Color("AppColor"))
+            
             SettingSliderDouble(
                 title: "Detection Confidence Threshold".translate(),
                 value: $confidenceThreshold,

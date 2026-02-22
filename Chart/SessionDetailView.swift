@@ -65,6 +65,7 @@ struct SessionDetailView: View {
                 }
             }
         } // End of NavigationView
+        .navigationViewStyle(.stack)
     }
 }
 

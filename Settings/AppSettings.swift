@@ -9,30 +9,33 @@
 import Foundation
 import AVFoundation
 
-// Your existing AppSettings struct - ADD THE NEW DEFAULT VALUES HERE
+// MARK: - Constants & Default Values
 struct AppSettings {
+    // Analysis Defaults
+    static let defaultUseCustomLLModel: Bool = false
     static let defaultSnoreConfidenceThreshold: Double = 0.6
     static let defaultAnalysisWindowDuration: Double = 1.0
     static let defaultAnalysisOverlapFactor: Double = 0.5
+    static let defaultSampleRate: Double = 44100.0
 
-    // --- NEW: Default values for Snore Event Post-Processing ---
+    // Post-Processing Defaults
     static let defaultPostProcessGapThreshold: Double = 5.0
     static let defaultPostProcessSmoothingWindowSize: Int = 3
     static let defaultPostProcessShortInterruptionThreshold: Double = 1.0
 
-    // --- NEW: Snore Identifiers (used by both aggregator and post-processor) ---
+    // Identifiers
     static let snoreEventIdentifier: String = "snoring"
     static let snoreEventRelatedIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"]
 }
 
-
+// MARK: - UserDefaults Extension
 extension UserDefaults {
 
-    // MARK: - Audio Recording Settings Enums
+    // MARK: - Enums
     enum AudioFormat: String, CaseIterable, Identifiable {
-        case aac = "AAC (Compressed)" // .m4a
-        case m4a = "Apple Lossless (ALAC)" // .m4a (lossless compression)
-        case wav = "PCM (Uncompressed)" // .wav
+        case aac = "AAC (Compressed)"
+        case m4a = "Apple Lossless (ALAC)"
+        case wav = "PCM (Uncompressed)"
 
         public var id: String { self.rawValue }
 
@@ -53,11 +56,7 @@ extension UserDefaults {
     }
 
     enum AudioRecordingQuality: String, CaseIterable, Identifiable {
-        case min = "Minimum"
-        case low = "Low"
-        case medium = "Medium"
-        case high = "High"
-        case max = "Maximum"
+        case min = "Minimum", low = "Low", medium = "Medium", high = "High", max = "Maximum"
 
         public var id: String { self.rawValue }
 
@@ -72,27 +71,26 @@ extension UserDefaults {
         }
     }
 
-    // MARK: - UserDefaults Stored Properties for Audio Settings
-
-
+    // MARK: - Audio Recording Preferences
+    @objc dynamic var useCustomLLModel: Bool {
+            get {
+                // If the object doesn't exist yet, return our default
+                return object(forKey: "useCustomLLModel") as? Bool ?? AppSettings.defaultUseCustomLLModel
+            }
+            set { set(newValue, forKey: "useCustomLLModel") }
+    }
+    
     var audioFormatPreference: AudioFormat {
         get {
             let rawValue = string(forKey: "audioFormatPreference") ?? AudioFormat.aac.rawValue
             return AudioFormat(rawValue: rawValue) ?? .aac
         }
-        set {
-            set(newValue.rawValue, forKey: "audioFormatPreference")
-        }
+        set { set(newValue.rawValue, forKey: "audioFormatPreference") }
     }
 
     var sampleRatePreference: Double {
-        get {
-            // Using `object(forKey:) == nil` is a robust way to check if a value has never been set.
-            return object(forKey: "sampleRatePreference") == nil ? 44100.0 : double(forKey: "sampleRatePreference")
-        }
-        set {
-            set(newValue, forKey: "sampleRatePreference")
-        }
+        get { object(forKey: "sampleRatePreference") as? Double ?? AppSettings.defaultSampleRate }
+        set { set(newValue, forKey: "sampleRatePreference") }
     }
 
     var audioQualityPreference: AudioRecordingQuality {
@@ -100,69 +98,39 @@ extension UserDefaults {
             let rawValue = string(forKey: "audioQualityPreference") ?? AudioRecordingQuality.high.rawValue
             return AudioRecordingQuality(rawValue: rawValue) ?? .high
         }
-        set {
-            set(newValue.rawValue, forKey: "audioQualityPreference")
-        }
+        set { set(newValue.rawValue, forKey: "audioQualityPreference") }
     }
 
+    // MARK: - Sound Analysis Settings
+    // @objc dynamic allows for Key-Value Observing (KVO) or Combine publishers
     @objc dynamic var snoreConfidenceThreshold: Double {
-        get {
-            // Default to a reasonable threshold if not set
-            return object(forKey: "snoreConfidenceThreshold") == nil ? 0.6 : double(forKey: "snoreConfidenceThreshold")
-        }
+        get { object(forKey: "snoreConfidenceThreshold") as? Double ?? AppSettings.defaultSnoreConfidenceThreshold }
         set { set(newValue, forKey: "snoreConfidenceThreshold") }
     }
-    
-    // MARK: - Sound Analysis Settings
-    var analysisWindowDuration: Double {
-        get {
-            // Default to 1.0 second if not set
-            return object(forKey: "analysisWindowDuration") == nil ? 1.0 : double(forKey: "analysisWindowDuration")
-        }
-        set {
-            set(newValue, forKey: "analysisWindowDuration")
-        }
+
+    @objc dynamic var analysisWindowDuration: Double {
+        get { object(forKey: "analysisWindowDuration") as? Double ?? AppSettings.defaultAnalysisWindowDuration }
+        set { set(newValue, forKey: "analysisWindowDuration") }
     }
 
-    var analysisOverlapFactor: Double {
-        get {
-            // Default to 0.5 if not set
-            return object(forKey: "analysisOverlapFactor") == nil ? 0.5 : double(forKey: "analysisOverlapFactor")
-        }
-        set {
-            set(newValue, forKey: "analysisOverlapFactor")
-        }
+    @objc dynamic var analysisOverlapFactor: Double {
+        get { object(forKey: "analysisOverlapFactor") as? Double ?? AppSettings.defaultAnalysisOverlapFactor }
+        set { set(newValue, forKey: "analysisOverlapFactor") }
     }
 
-    // MARK: - Snore Event Post-Processing Settings (NEWLY ADDED)
-
+    // MARK: - Post-Processing Settings
     var postProcessGapThreshold: Double {
-        get {
-            // Default to 5.0 seconds if not set
-            return object(forKey: "postProcessGapThreshold") == nil ? 5.0 : double(forKey: "postProcessGapThreshold")
-        }
-        set {
-            set(newValue, forKey: "postProcessGapThreshold")
-        }
+        get { object(forKey: "postProcessGapThreshold") as? Double ?? AppSettings.defaultPostProcessGapThreshold }
+        set { set(newValue, forKey: "postProcessGapThreshold") }
     }
 
     var postProcessSmoothingWindowSize: Int {
-        get {
-            // Default to 3 events if not set
-            return object(forKey: "postProcessSmoothingWindowSize") == nil ? 3 : integer(forKey: "postProcessSmoothingWindowSize")
-        }
-        set {
-            set(newValue, forKey: "postProcessSmoothingWindowSize")
-        }
+        get { object(forKey: "postProcessSmoothingWindowSize") as? Int ?? AppSettings.defaultPostProcessSmoothingWindowSize }
+        set { set(newValue, forKey: "postProcessSmoothingWindowSize") }
     }
 
     var postProcessShortInterruptionThreshold: Double {
-        get {
-            // Default to 1.0 second if not set
-            return object(forKey: "postProcessShortInterruptionThreshold") == nil ? 1.0 : double(forKey: "postProcessShortInterruptionThreshold")
-        }
-        set {
-            set(newValue, forKey: "postProcessShortInterruptionThreshold")
-        }
+        get { object(forKey: "postProcessShortInterruptionThreshold") as? Double ?? AppSettings.defaultPostProcessShortInterruptionThreshold }
+        set { set(newValue, forKey: "postProcessShortInterruptionThreshold") }
     }
 }

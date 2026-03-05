@@ -15,192 +15,98 @@ struct ChartableSleepSession: Identifiable {
 struct DailySleepReportView: View {
     let selectedDate: Date
     @ObservedObject var soundDataManager: SoundDataManager
+    @State private var selectedTime: Date?
 
-    @State private var dailySessions: [RecordingSession] = []
-    @State private var dailySoundEvents: [SoundEvent] = []
-
-    // MARK: - Computed property to prepare sleep session data for the chart
-    private var chartableSleepSessions: [ChartableSleepSession] {
-        let calendar = Calendar.current
-        let displayStartOfDay = calendar.startOfDay(for: selectedDate)
-        // This guard is outside the ChartContentBuilder, so it's fine here
-        guard let displayEndOfDay = calendar.date(byAdding: .day, value: 1, to: displayStartOfDay) else {
-            return [] // Return an empty array if date calculation fails
+    // This range MUST match the predicate logic in SoundDataManager
+    private var chartRange: ClosedRange<Date> {
+        let sessions = soundDataManager.fetchRecordingSessions(for: selectedDate)
+        
+        // Fallback: If no sessions, show a default 12-hour window around selectedDate
+        guard let firstStart = sessions.compactMap({ $0.startTime }).min(),
+              let lastEnd = sessions.compactMap({ $0.endTime }).max() else {
+            let start = Calendar.current.startOfDay(for: selectedDate)
+            return start...start.addingTimeInterval(3600 * 12)
         }
-
-        return dailySessions.compactMap { session in
-            guard let sessionStartTime = session.startTime,
-                  let sessionEndTime = session.endTime else {
-                return nil // Skip sessions with missing times
-            }
-
-            let chartSegmentStart = max(sessionStartTime, displayStartOfDay)
-            let chartSegmentEnd = min(sessionEndTime, displayEndOfDay)
-
-            // Only include if there's a valid segment within the display day
-            if chartSegmentEnd > chartSegmentStart {
-                return ChartableSleepSession(
-                    session: session,
-                    chartStart: chartSegmentStart,
-                    chartEnd: chartSegmentEnd,
-                    actualDuration: sessionEndTime.timeIntervalSince(sessionStartTime)
-                )
-            }
-            return nil // Exclude sessions that don't overlap with the display day
-        }
+        
+        // Add 30 minutes of "padding" to the start and end so bars aren't touching the edges
+        return firstStart.addingTimeInterval(-1800)...lastEnd.addingTimeInterval(1800)
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("Sleep Sessions for \(selectedDate, formatter: dateFormatter)")
-                .font(.headline)
-                .padding(.bottom, 5)
-
-            // MARK: - Sleep Sessions Chart
-            // Now, we use chartableSleepSessions, which is already filtered and prepared
-            if chartableSleepSessions.isEmpty {
-                Text("No sleep sessions recorded for this day.")
-                    .foregroundColor(.gray)
-                    .frame(height: 150)
-                    .frame(maxWidth: .infinity)
+        let sessions = soundDataManager.fetchRecordingSessions(for: selectedDate)
+        let events = soundDataManager.fetchSoundEvents(for: selectedDate)
+        
+        Group {
+            if sessions.isEmpty && events.isEmpty {
+                // Friendly empty state
+                VStack {
+                    Image(systemName: "zzz")
+                        .font(.system(size: 40))
+                        .foregroundColor(.gray.opacity(0.3))
+                    Text("No data for this night")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Chart(chartableSleepSessions) { chartSession in // Chart now uses the prepared data
-                    RectangleMark(
-                        xStart: .value("Start Time", chartSession.chartStart),
-                        xEnd: .value("End Time", chartSession.chartEnd),
-                        y: .value("Session", "\(chartSession.session.startTime?.formatted(date: .omitted, time: .shortened) ?? "") - \(chartSession.session.endTime?.formatted(date: .omitted, time: .shortened) ?? "")")
-                    )
-                    .foregroundStyle(by: .value("Title", chartSession.session.title ?? "Unknown Session"))
-                    .annotation(position: .overlay) {
-                        if chartSession.actualDuration > 0 { // Check duration from the prepared struct
-                            Text(formatDuration(chartSession.actualDuration))
-                                .font(.caption2)
-                                .foregroundColor(.white)
-                                .minimumScaleFactor(0.5)
-                                .lineLimit(1)
+                VStack(spacing: 20) {
+                    // SESSION CHART
+                    Chart {
+                        ForEach(sessions) { session in
+                            if let start = session.startTime, let end = session.endTime {
+                                BarMark(
+                                    xStart: .value("Start", start),
+                                    xEnd: .value("End", end),
+                                    y: .value("Type", "Sleep")
+                                )
+                                .foregroundStyle(Color.blue.gradient)
+                                .cornerRadius(6)
+                            }
                         }
+                        interactionRuleMark
                     }
-                }
-                .chartXAxis {
-                    AxisMarks(values: .stride(by: .hour, count: 2)) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        if let date = value.as(Date.self) {
-                            AxisValueLabel(format: .dateTime.hour(), anchor: .top)
-                        }
-                    }
-                }
-                .chartYAxis(.hidden)
-                .frame(height: 150)
-                .padding(.vertical)
+                    .frame(height: 100)
+                    .chartXScale(domain: chartRange)
+                    .chartXSelection(value: $selectedTime)
 
-                Text("Total Sleep for this sleep day: \(formatDuration(soundDataManager.calculateDailySleepDuration(for: selectedDate)))")
-                    .font(.subheadline)
-                    .padding(.top, 5)
+                    // SOUND EVENTS CHART
+                    Chart {
+                        ForEach(events) { event in
+                            if let time = event.timestamp {
+                                BarMark(
+                                    x: .value("Time", time),
+                                    y: .value("Events", 1)
+                                )
+                                .foregroundStyle(by: .value("Category", event.name ?? "Snore"))
+                            }
+                        }
+                        interactionRuleMark
+                    }
+                    .frame(maxHeight: .infinity) // Fills the bottom space
+                    .chartXScale(domain: chartRange)
+                    .chartXSelection(value: $selectedTime)
+                }
             }
-
-            Divider()
-                .padding(.vertical, 5)
-
-            // MARK: - Sound Events Histogram Chart
-            Text("Sound Events Overview")
-                .font(.headline)
-                .padding(.bottom, 5)
-
-            // Similar logic for Sound Events: filter and prepare outside the Chart if needed
-            if dailySoundEvents.isEmpty {
-                Text("No sound events recorded for this day.")
-                    .foregroundColor(.gray)
-                    .frame(height: 150)
-                    .frame(maxWidth: .infinity)
-            } else {
-                Chart(dailySoundEvents) { event in
-                    // For sound events, ensure timestamp is not nil.
-                    // If it could be nil often, you'd apply a similar compactMap.
-                    // For now, assuming timestamp is mostly present, or we can filter here:
-                    if let timestamp = event.timestamp {
-                        BarMark(
-                            x: .value("Time", timestamp),
-                            y: .value("Count", 1)
-                        )
-                        .foregroundStyle(by: .value("Event Type", event.name ?? "Unknown"))
-                        .position(by: .value("Event Type", event.name ?? "Unknown"))
-                    }
-                }
-                .chartXAxis {
-                    AxisMarks(values: .stride(by: .hour, count: 2)) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        if let date = value.as(Date.self) {
-                            AxisValueLabel(format: .dateTime.hour(), anchor: .top)
-                        }
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(preset: .automatic) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel()
-                    }
-                }
-                .chartXScale(domain: selectedDate.startOfDay...Calendar.current.date(byAdding: .day, value: 1, to: selectedDate.startOfDay)!)
-                .frame(height: 150)
-                .padding(.vertical)
-            }
-        }
-        .onChange(of: selectedDate) {
-            fetchDailySessions()
-            fetchDailySoundEvents()
         }
         .onAppear {
-            fetchDailySessions()
-            fetchDailySoundEvents()
+            print("Chart appearing for \(selectedDate). Sessions found: \(sessions.count)")
         }
     }
-
-    private func fetchDailySessions() {
-        dailySessions = soundDataManager.fetchRecordingSessions(for: selectedDate)
-    }
-
-    private func fetchDailySoundEvents() {
-        dailySoundEvents = soundDataManager.fetchSoundEvents(for: selectedDate)
-    }
-
-    private func calculateTotalSleepDurationForDisplay() -> TimeInterval {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: selectedDate)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
-            return 0
+    
+ 
+    @ChartContentBuilder
+    private var interactionRuleMark: some ChartContent {
+        if let selectedTime = selectedTime {
+            RuleMark(x: .value("Selected", selectedTime))
+                .foregroundStyle(.primary)
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [5]))
+                .annotation(position: .top) {
+                    Text(selectedTime.formatted(date: .omitted, time: .shortened))
+                        .font(.caption2.bold())
+                        .padding(4)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(4)
+                }
         }
-
-        var totalDuration: TimeInterval = 0
-
-        for session in dailySessions {
-            guard let sessionStart = session.startTime,
-                  let sessionEnd = session.endTime else {
-                continue
-            }
-
-            let segmentStart = max(sessionStart, startOfDay)
-            let segmentEnd = min(sessionEnd, endOfDay)
-
-            if segmentEnd > segmentStart {
-                totalDuration += segmentEnd.timeIntervalSince(segmentStart)
-            }
-        }
-        return totalDuration
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        return String(format: "%dhr %02dmin", hours, minutes)
-    }
-
-    private var dateFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        return formatter
     }
 }

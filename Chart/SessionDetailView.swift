@@ -12,64 +12,64 @@ import Charts // Make sure Charts is imported here
 
 struct SessionDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.dismiss) var dismiss // For dismissing the sheet
-
+    @Environment(\.dismiss) var dismiss
     @ObservedObject var session: RecordingSession
 
     var body: some View {
-        NavigationView { // Embed in a NavigationView to get the toolbar and title
-            ScrollView { // Use ScrollView for overall scrolling
-                VStack(spacing: 20) { // Arrange content vertically
-                    // Section for Notes and Session Details
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Session Notes & Details")
-                            .font(.headline)
-                            .padding(.horizontal) // Match List's default padding
+        NavigationView {
+            // Use a VStack instead of ScrollView to allow "filling" the screen
+            VStack(spacing: 0) {
+                
+                // 1. Top Section: Session Details & Notes
+                // We keep this at its natural height
+                EditNotesContentView(session: session)
+                    .padding(.bottom)
+                
+                Divider()
 
-                        EditNotesContentView(session: session)
-                            .frame(minHeight: 250) // Give notes content a good minimum height
-                                                  // This is crucial for TextEditor
-                            .background(Color(.systemBackground)) // Match overall background
-                            .cornerRadius(10)
-                            .shadow(radius: 2)
-                            .padding(.horizontal)
-                    }
+                // 2. Bottom Section: The Chart
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Snore Events Chart")
+                        .font(.headline)
+                        .padding([.horizontal, .top])
 
-                    // Section for Snore Events Chart
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Snore Events Chart")
-                            .font(.headline)
-                            .padding(.horizontal) // Match List's default padding
-
-                        SnoreEventBarChartViewContent(session: session)
-                            .frame(height: 350) // Chart needs a fixed height
-                            .background(Color(.systemBackground)) // Match overall background
-                            .cornerRadius(10)
-                            .shadow(radius: 2)
-                            .padding(.horizontal)
-                    }
-
-                    Spacer() // Pushes content to the top
+                    SnoreEventBarChartViewContent(session: session)
+                        // This allows the chart to grow and fill all available space
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.1), radius: 4)
+                        .padding([.horizontal, .bottom])
                 }
-                .padding(.vertical) // Add some vertical padding around the whole content
+                // layoutPriority ensures the Chart is the one to expand
+                // if there is a conflict for space
+                .layoutPriority(1)
             }
             .navigationTitle(session.title ?? "Session Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
-                        // The onDisappear in EditNotesContentView handles saving.
-                        // Just dismiss the view here.
-                        dismiss()
-                    }
+                    Button("Done") { dismiss() }
                 }
             }
-        } // End of NavigationView
+        }
         .navigationViewStyle(.stack)
     }
 }
 
-// MARK: - Extracted Content Views
+// Small helper view for the stats
+struct StatItem: View {
+    let label: String
+    let value: String
+    let color: Color
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(value).font(.headline).foregroundColor(color)
+            Text(label).font(.caption2).foregroundColor(.secondary)
+        }
+    }
+}
+
 
 struct EditNotesContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -84,39 +84,51 @@ struct EditNotesContentView: View {
     }()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) { // Reduced spacing for a more compact look
-            Group {
-                Text("Title: \(session.title ?? "Untitled Session")")
+        VStack(alignment: .leading, spacing: 12) {
+            // --- SESSION INFO SECTION ---
+            VStack(alignment: .leading, spacing: 4) {
+                Text(session.title ?? "Untitled Session")
+                    .font(.title3)
+                    .bold()
+                
                 if let startTime = session.startTime {
-                    Text("Started: \(startTime, formatter: Self.dateFormatter)")
+                    Label("\(startTime, formatter: Self.dateFormatter)", systemImage: "play.circle")
                 }
+                
                 if let endTime = session.endTime {
-                    Text("Ended: \(endTime, formatter: Self.dateFormatter)")
+                    Label("\(endTime, formatter: Self.dateFormatter)", systemImage: "stop.circle")
                 }
-                Text("Snore Events: \(session.totalSnoreEvents)")
-                Text("Snore Related: \(session.totalSnoreRelated)")
-                Text("Other Events: \(session.totalNonSnoreEvents)")
             }
             .font(.subheadline)
-            // No horizontal padding here, parent will handle it.
+            .foregroundColor(.secondary)
+            
+            Divider()
+
+            // --- STATS GRID ---
+            HStack(spacing: 15) {
+                StatItem(label: "Snores", value: "\(session.totalSnoreEvents)", color: .orange)
+                StatItem(label: "Related", value: "\(session.totalSnoreRelated)", color: .blue)
+                StatItem(label: "Other", value: "\(session.totalNonSnoreEvents)", color: .gray)
+            }
 
             Divider()
 
+            // --- NOTES SECTION ---
+            Text("Notes")
+                .font(.caption)
+                .bold()
+                .textCase(.uppercase)
+                .foregroundColor(.secondary)
+
             TextEditor(text: $notesText)
-                .scrollContentBackground(.hidden) // Hide default background for better control
-                .background(Color.clear) // Ensure the TextEditor's own background is clear
-                .padding(5) // Inner padding for text within the editor's frame
+                .frame(minHeight: 150) // Ensures it doesn't collapse to 0
+                .padding(4)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1) // Add a border
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                 )
-                .fixedSize(horizontal: false, vertical: true) // Allow TextEditor to determine its ideal height based on content
-                .frame(minHeight: 150) // Fallback min height if content is short
-                .autocapitalization(.sentences)
-                .disableAutocorrection(false)
-
         }
-        // No top/bottom padding here, parent will handle it to allow it to grow
+        .padding()
         .onAppear {
             notesText = session.notes ?? ""
         }
@@ -128,6 +140,7 @@ struct EditNotesContentView: View {
         }
     }
 }
+
 
 
 struct SnoreEventBarChartViewContent: View {

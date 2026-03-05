@@ -18,10 +18,6 @@ class SoundDataManager: ObservableObject {
     // Inject SnoreEventPostProcessor
     private let snoreEventPostProcessor: SnoreEventPostProcessor
 
-
-    // Define the hour at which a "sleep day" starts (e.g., 6 PM)
-    private let sleepDayStartHour = 16 // 16:00 (4 PM)
-
     // Initializer to inject the Core Data context
     init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
         self.managedObjectContext = context
@@ -115,46 +111,32 @@ class SoundDataManager: ObservableObject {
 
     // MARK: - Sleep Session Management
 
-    // Fetches RecordingSessions for a specific "sleep day" defined by the given date
-    // The "sleep day" spans from sleepDayStartHour on `date` to sleepDayStartHour on the next
-    // calendar day.
-    func fetchRecordingSessions(for date: Date) -> [RecordingSession] {
-        let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
-
+    func fetchRecordingSessions(for displayDate: Date) -> [RecordingSession] {
         let calendar = Calendar.current
-
-        // Calculate the start of the "sleep day" (e.g., 6 PM on selectedDate)
-        var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = sleepDayStartHour
-        // Ensure date from components is not nil (e.g., if date is invalid)
-        guard let sleepDayStart = calendar.date(from: components) else {
-            print("Error: Could not create sleepDayStart date from components for \(date)")
+        let startOfDisplayDay = calendar.startOfDay(for: displayDate)
+        
+        // We want to find sessions that ENDED on the displayDate.
+        // Usually, if you wake up on Tuesday, that is your "Tuesday Sleep Report,"
+        // even if you went to bed on Monday.
+        guard let endOfDisplayDay = calendar.date(byAdding: .day, value: 1, to: startOfDisplayDay) else {
             return []
         }
 
-        // Calculate the end of the "sleep day" (e.g., 6 PM on the next calendar day)
-        guard let sleepDayEnd = calendar.date(byAdding: .day, value: 1, to: sleepDayStart) else {
-            print("Error: Could not calculate sleepDayEnd date from sleepDayStart \(sleepDayStart)")
-            return []
-        }
-
-        // Predicate to filter sessions that either start or end within this custom "sleep day" window,
-        // or span across it. This predicate covers all cases for sessions relevant to this custom day.
-        let predicate = NSPredicate(format: "(startTime >= %@ AND startTime < %@) OR (endTime > %@ AND endTime <= %@) OR (startTime < %@ AND endTime > %@)",
-                                     sleepDayStart as NSDate,
-                                     sleepDayEnd as NSDate,
-                                     sleepDayStart as NSDate,
-                                     sleepDayEnd as NSDate,
-                                     sleepDayStart as NSDate,
-                                     sleepDayEnd as NSDate)
-
-        fetchRequest.predicate = predicate
+        let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
+        
+        // Filter: Sessions that end between 00:00 and 23:59 of the selected date
+        // This naturally captures the "Night Sleep" and any "Day Naps" on that specific day.
+        fetchRequest.predicate = NSPredicate(
+            format: "endTime >= %@ AND endTime < %@",
+            startOfDisplayDay as NSDate,
+            endOfDisplayDay as NSDate
+        )
+        
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: true)]
 
         do {
             return try managedObjectContext.fetch(fetchRequest)
         } catch {
-            print("Failed to fetch recording sessions for sleep day starting \(sleepDayStart): \(error)")
             return []
         }
     }

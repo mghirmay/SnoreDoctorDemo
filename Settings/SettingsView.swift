@@ -22,6 +22,7 @@ struct SettingsView: View {
                 AnalysisSettingsSection()
                 PostProcessingSection()
                 AudioRecordingSection()
+                PlaybackSettingsSection()
                 DataManagementSection(
                     clearDataAction: clearAllData,
                     success: clearDataSuccess,

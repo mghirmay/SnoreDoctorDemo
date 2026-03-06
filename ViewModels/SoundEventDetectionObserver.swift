@@ -151,10 +151,11 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
                     self.delegate?.didDetectSoundEvent(logString: outputStringForUI)
                 }
                 
-                // Only play if not already playing to avoid overlapping sounds
-                // Play the random snippet
+        
                 if isSnore {
-                    SnorePlaybackManager.shared.playRandomSound()
+                    // Only play if not already playing to avoid overlapping sounds
+                    // Play the random sound snippet
+                    SnorePlaybackManager.shared.notifySnoreDetected()
                 }
                 
             } else {

@@ -9,26 +9,6 @@
 import CoreData
 import Foundation
 
-// --- Assuming these are defined elsewhere ---
-// extension UserDefaults { var postProcessGapThreshold: Double { 0.5 } }
-// class AppSettings { static let snoreEventRelatedIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"] }
-// class RecordingSession: NSManagedObject { @NSManaged public var id: UUID? }
-// class SnoreEvent: NSManagedObject {
-//    @NSManaged public var id: UUID?
-//    @NSManaged public var session: RecordingSession?
-//    @NSManaged public var startTime: Date?
-//    @NSManaged public var endTime: Date?
-//    @NSManaged public var duration: Double
-//    @NSManaged public var count: Int32
-//    @NSManaged public var averageConfidence: Double
-//    @NSManaged public var minConfidence: Double
-//    @NSManaged public var maxConfidence: Double
-//    @NSManaged public var peakConfidence: Double
-//    @NSManaged public var medianConfidence: Double
-//    @NSManaged public var soundEventNamesHistogram: NSDictionary?
-//    @NSManaged public var name: String?
-// }
-
 
 // MARK: - Protocol Definition
 

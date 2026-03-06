@@ -7,104 +7,136 @@
 //
 
 
-
-/// Manages the playback of random snore audio samples from the app bundle.
 import AVFoundation
 
-class SnorePlaybackManager {
+class SnorePlaybackManager: NSObject, AVAudioPlayerDelegate {
     static let shared = SnorePlaybackManager()
     
     private var audioPlayer: AVAudioPlayer?
-    private var stopTimer: Timer?
+    private var watchdogTimer: Timer?
     
-    // The directory name as it appears in your project (Blue folder)
-    private let subDirectory = "Resources"
-    private let snippetLength: TimeInterval = 2.5
-    private let fadeDuration: TimeInterval = 0.5
-    
-    private init() {
+    private var isSnoringDetected = false
+    private var lastPlayedFileName: String? // Store the previous filename
+
+    private var sessionVolume: Double  =  UserDefaults.standard.initialVolume;
+    private var initialVolume: Double { UserDefaults.standard.initialVolume }
+    private var volumeStep: Double { UserDefaults.standard.volumeStep }
+    private var silenceTimeout: TimeInterval { UserDefaults.standard.silenceTimeout }
+
+    private override init() {
+        super.init()
+        debugBundleStructure()
         configureAudioSession()
     }
     
-    private func configureAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("🔊 SnorePlaybackManager: Audio Session failed: \(error)")
-        }
-    }
-    
-    func playRandomSound() {
-        DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                
-                if self.audioPlayer?.isPlaying == true { return }
-                
-                // 1. Look directly in the Main Bundle (since the files are at the top level)
-                let fileManager = FileManager.default
-                guard let bundlePath = Bundle.main.resourcePath else { return }
-                
-                do {
-                    let allFiles = try fileManager.contentsOfDirectory(atPath: bundlePath)
-                    
-                    // 2. Filter for your naming pattern: Starts with "Sound" and is a .wav or .mp3
-                    let audioFiles = allFiles.filter { file in
-                        let isAudio = file.lowercased().hasSuffix(".wav") || file.lowercased().hasSuffix(".mp3")
-                        let isSnoreFile = file.hasPrefix("Sound")
-                        return isAudio && isSnoreFile
-                    }
-                    
-                    // 3. Pick a random file
-                    guard let randomFileName = audioFiles.randomElement(),
-                          let fileURL = Bundle.main.url(forResource: randomFileName, withExtension: nil) else {
-                        print("⚠️ SnorePlaybackManager: No files matching 'Sound XX.wav' found in Bundle.")
-                        return
-                    }
-                    
-                    // 4. Setup and Play
-                    self.audioPlayer = try AVAudioPlayer(contentsOf: fileURL)
-                    self.audioPlayer?.prepareToPlay()
-                    self.audioPlayer?.volume = 1.0
-                    self.audioPlayer?.play()
-                    
-                    print("✅ SnorePlaybackManager: Successfully playing from Bundle root: \(randomFileName)")
-                    
-                    self.scheduleStopTimer()
-                    
-                } catch {
-                    print("❌ SnorePlaybackManager: Error scanning bundle: \(error.localizedDescription)")
-                }
+    func debugBundleStructure() {
+        let bundleURL = Bundle.main.bundleURL
+        print("DEBUG: Root Bundle Path: \(bundleURL.path)")
+        
+        let fileManager = FileManager.default
+        if let enumerator = fileManager.enumerator(at: bundleURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) {
+            for case let fileURL as URL in enumerator {
+                print("Found item at: \(fileURL.path)")
             }
-    }
-    
-    // Helper to see what is actually inside your app's bundle
-    private func debugListBundleContents() {
-        print("📂 Checking Bundle contents...")
-        if let path = Bundle.main.resourcePath {
-            let items = (try? FileManager.default.contentsOfDirectory(atPath: path)) ?? []
-            print("Main Bundle contains: \(items)")
-        }
-    }
-    
-    private func scheduleStopTimer() {
-        stopTimer?.invalidate()
-        stopTimer = Timer.scheduledTimer(withTimeInterval: snippetLength, repeats: false) { [weak self] _ in
-            self?.stopWithFade()
-        }
-    }
-    
-    private func stopWithFade() {
-        audioPlayer?.setVolume(0, fadeDuration: fadeDuration)
-        DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) { [weak self] in
-            self?.audioPlayer?.stop()
-            self?.audioPlayer = nil
-            self?.stopTimer?.invalidate()
-            self?.stopTimer = nil
         }
     }
 
-    deinit {
-        stopTimer?.invalidate()
+    private func configureAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("🔊 Session error: \(error)")
+        }
+    }
+
+    /// Your detector calls this every time it hears a snore
+    func notifySnoreDetected() {
+        // 1. Kick the "Stop Timer" down the road
+        resetWatchdog()
+
+        // 2. If we aren't currently in a playback loop, start one
+        if !isSnoringDetected {
+            print("🌙 Snore cycle started.")
+            isSnoringDetected = true
+            sessionVolume = initialVolume
+            playNextCycle()
+        }
+    }
+
+    private func playNextCycle() {
+        // Ensure the state is still active
+        guard isSnoringDetected else { return }
+        playRandomSound(volume: sessionVolume)
+    }
+
+    // MARK: - AVAudioPlayerDelegate
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        guard isSnoringDetected else { return }
+
+        print("⌛️ Sound ended. Waiting 5 seconds before next potential play...")
+        
+        // The 5-second gap starts AFTER the sound ends
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+            self?.playNextCycle()
+        }
+    }
+
+    // MARK: - Auto-Stop Logic (The Watchdog)
+    private func resetWatchdog() {
+        watchdogTimer?.invalidate()
+        let timer = Timer(timeInterval: silenceTimeout, repeats: false) { [weak self] _ in
+            print("🤫 Watchdog: Timer expired!")
+            self?.stopEverything()
+        }
+        // Explicitly add to main runloop
+        RunLoop.main.add(timer, forMode: .common)
+        watchdogTimer = timer
+    }
+
+    func stopEverything() {
+        isSnoringDetected = false
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+        audioPlayer?.stop()
+        audioPlayer = nil
+    }
+    
+
+
+    private func playRandomSound(volume: Double) {
+        let fileManager = FileManager.default
+        let bundleURL = Bundle.main.bundleURL
+        
+        do {
+            let fileURLs = try fileManager.contentsOfDirectory(at: bundleURL, includingPropertiesForKeys: nil)
+            let allAudioFiles = fileURLs.filter {
+                let name = $0.lastPathComponent
+                return name.hasPrefix("AntiSchnarch") && (name.lowercased().hasSuffix(".wav") || name.lowercased().hasSuffix(".mp3"))
+            }
+            
+            let availableFiles = allAudioFiles.filter { $0.lastPathComponent != lastPlayedFileName }
+            
+            // If we can't find a file, stop everything and exit
+            guard let randomFileURL = availableFiles.randomElement() ?? allAudioFiles.randomElement() else {
+                print("⚠️ No audio files found. Stopping.")
+                stopEverything()
+                return
+            }
+            
+            lastPlayedFileName = randomFileURL.lastPathComponent
+            
+            audioPlayer = try AVAudioPlayer(contentsOf: randomFileURL)
+            audioPlayer?.delegate = self
+            // Since volume is a Double from your UserDefaults, cast it to Float:
+            audioPlayer?.volume = Float(volume)
+            audioPlayer?.play()
+            
+            sessionVolume = min(sessionVolume + volumeStep, 1.0)
+            
+        } catch {
+            print("❌ Error reading bundle: \(error)")
+            stopEverything() // Stop if there's any file access error
+        }
     }
 }

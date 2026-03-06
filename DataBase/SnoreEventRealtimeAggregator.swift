@@ -23,9 +23,10 @@ class SnoreEventRealtimeAggregator: SnoreEventCreator {
         }
         
         let gapThreshold: Double = UserDefaults.standard.postProcessGapThreshold
-        let snoreIdentifiers: Set<String> = AppSettings.snoreEventRelatedIdentifiers
         
-        let isSnoreRelated = snoreIdentifiers.contains(soundEvent.name?.lowercased() ?? "")
+
+        let snoreRelatedIdentifiers: Set<String> = AppSettings.snoreEventRelatedIdentifiers
+        let isSnoreRelated = snoreRelatedIdentifiers.contains(soundEvent.name?.lowercased() ?? "")
 
         finalizationTimer?.invalidate()
         finalizationTimer = nil
@@ -37,7 +38,7 @@ class SnoreEventRealtimeAggregator: SnoreEventCreator {
             }
         }
 
-        if isSnoreRelated {
+        if isSnoreRelated  {
             currentSnoreEventsBatch.append(soundEvent)
             scheduleFinalizationTimer(gapThreshold: gapThreshold)
         } else {

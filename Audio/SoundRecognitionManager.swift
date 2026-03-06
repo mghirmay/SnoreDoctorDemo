@@ -144,7 +144,7 @@ class SoundRecognitionManager: NSObject {
             // CRITICAL: We retain the observer here so it doesn't get deallocated
             retainedObservers = [observer]
 
-            // 4. Install Tap
+            // 4. Install Tap  crash crash crash
             let bufferSize = AVAudioFrameCount(4096)
             inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { buffer, time in
                 self.analysisQueue.async {
@@ -214,7 +214,6 @@ class SoundRecognitionManager: NSObject {
         stopAudioSession() // Always ensure clean state before starting
         do {
             let audioSession = AVAudioSession.sharedInstance()
-            //try audioSession.setCategory(.record, mode: .default)
             try audioSession.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers])
             try audioSession.setActive(true)
         } catch {

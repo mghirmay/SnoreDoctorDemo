@@ -11,6 +11,12 @@ import AVFoundation
 
 // MARK: - Constants & Default Values
 struct AppSettings {
+    
+    // Playback Settings
+    static let defaultInitialVolume: Double = 0.5
+    static let defaultVolumeStep: Double = 0.1
+    static let defaultSilenceTimeout: TimeInterval = 12.0
+
     // Analysis Defaults
     static let defaultUseCustomLLModel: Bool = false
     static let defaultSnoreConfidenceThreshold: Double = 0.6
@@ -133,4 +139,19 @@ extension UserDefaults {
         get { object(forKey: "postProcessShortInterruptionThreshold") as? Double ?? AppSettings.defaultPostProcessShortInterruptionThreshold }
         set { set(newValue, forKey: "postProcessShortInterruptionThreshold") }
     }
+    
+    @objc dynamic var initialVolume: Double {
+        get { double(forKey: "initialVolume") != 0 ? double(forKey: "initialVolume") : AppSettings.defaultInitialVolume }
+            set { set(newValue, forKey: "initialVolume") }
+        }
+
+        @objc dynamic var volumeStep: Double {
+            get { double(forKey: "volumeStep") != 0 ? double(forKey: "volumeStep") : AppSettings.defaultVolumeStep }
+            set { set(newValue, forKey: "volumeStep") }
+        }
+
+        @objc dynamic var silenceTimeout: TimeInterval {
+            get { object(forKey: "silenceTimeout") as? TimeInterval ?? AppSettings.defaultSilenceTimeout }
+            set { set(newValue, forKey: "silenceTimeout") }
+        }
 }

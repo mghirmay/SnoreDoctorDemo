@@ -33,7 +33,12 @@ struct BoxPlotChart: View {
                     .padding(.vertical, 40)
             } else {
                 let stats = boxPlotStats(for: data)
-
+                HStack {
+                    Text("Boxplot ")
+                        .font(.headline)
+                    HelpPopoverButton(info: HelpDataFactory.boxPlotChart)
+                }
+                .padding(.horizontal)
                 Chart {
                     // Whisker (vertical line from min → max)
                     RuleMark(

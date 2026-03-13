@@ -46,7 +46,7 @@ struct PlaybackSettingsSection: View {
                     Text("\(Int(silenceTimeout))s")
                         .foregroundColor(.secondary)
                 }
-                Slider(value: $silenceTimeout, in: 5...60, step: 1)
+                Slider(value: $silenceTimeout, in: 10...60, step: 1)
             }
         }
     }

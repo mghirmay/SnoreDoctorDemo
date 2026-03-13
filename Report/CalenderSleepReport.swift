@@ -10,14 +10,15 @@ import Charts // Requires iOS 16+
 import CoreData
 
 
-struct SleepReportView: View {
-    @StateObject private var soundDataManager: SoundDataManager
+struct CalenderSleepReport: View {
+    @EnvironmentObject var soundDataManager: SoundDataManager
     @State private var selectedDate: Date = Date()
     @State private var currentMonth: Date = Date()
     @Environment(\.dismiss) var dismiss
+    
 
     init() {
-        _soundDataManager = StateObject(wrappedValue: SoundDataManager())
+        //TODO::
     }
 
     var body: some View {
@@ -34,8 +35,7 @@ struct SleepReportView: View {
                         Text("Wake-Up Date").font(.caption).bold().foregroundColor(.secondary)
                         CalendarView(
                             selectedDate: $selectedDate,
-                            currentMonth: $currentMonth,
-                            soundDataManager: soundDataManager
+                            currentMonth: $currentMonth
                         )
                         .padding(10)
                         .background(Color(.secondarySystemGroupedBackground))
@@ -56,7 +56,8 @@ struct SleepReportView: View {
                         
                         VStack(alignment: .leading, spacing: 0) {
                             Text("RECORDINGS").font(.caption2).bold().foregroundColor(.secondary).padding([.leading, .top], 12)
-                            SessionSidebarList(selectedDate: selectedDate, manager: soundDataManager)
+                            SessionSidebarListView(selectedDate: selectedDate)
+                                .environmentObject(soundDataManager)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity) // Fills height to match calendar
                         .background(Color(.secondarySystemGroupedBackground))
@@ -76,10 +77,7 @@ struct SleepReportView: View {
                     .padding(.horizontal, 8)
                     
                     // This now expands to fill every remaining pixel of the screen
-                    DailySleepReportView(
-                        selectedDate: selectedDate,
-                        soundDataManager: soundDataManager
-                    )
+                    DailySleepReportView(selectedDate: selectedDate)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .padding()

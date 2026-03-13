@@ -54,8 +54,7 @@ extension SnoreEventCreator {
             snoreEvent.averageConfidence = confidences.reduce(0.0, +) / Double(confidences.count)
             snoreEvent.minConfidence = confidences.min() ?? 0.0
             snoreEvent.maxConfidence = confidences.max() ?? 0.0
-            snoreEvent.peakConfidence = confidences.max() ?? 0.0
-
+    
             let sortedConfidences = confidences.sorted()
             if sortedConfidences.count % 2 == 0 {
                 let middleIndex = sortedConfidences.count / 2
@@ -68,7 +67,6 @@ extension SnoreEventCreator {
             snoreEvent.minConfidence = 0.0
             snoreEvent.maxConfidence = 0.0
             snoreEvent.medianConfidence = 0.0
-            snoreEvent.peakConfidence = 0.0
         }
 
         var namesHistogram: [String: Int] = [:]

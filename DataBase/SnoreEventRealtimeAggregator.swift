@@ -15,38 +15,66 @@ class SnoreEventRealtimeAggregator: SnoreEventCreator {
         self.managedObjectContext = context
         self.recordingSession = session
     }
-
+    
+    
+    
     func processNewSoundEvent(_ soundEvent: SoundEvent) {
         guard let currentEventTimestamp = soundEvent.timestamp else {
             print("Warning: SoundEvent timestamp is nil. Skipping processing.")
             return
         }
         
-        let gapThreshold: Double = UserDefaults.standard.postProcessGapThreshold
-        
-
-        let snoreRelatedIdentifiers: Set<String> = AppSettings.snoreEventRelatedIdentifiers
-        let isSnoreRelated = snoreRelatedIdentifiers.contains(soundEvent.name?.lowercased() ?? "")
-
-        finalizationTimer?.invalidate()
-        finalizationTimer = nil
-
-        if let lastProcessedTime = lastSoundEventProcessedTimestamp {
-            let timeSinceLastEvent = currentEventTimestamp.timeIntervalSince(lastProcessedTime)
-            if timeSinceLastEvent > gapThreshold {
+        let eventName = soundEvent.name?.lowercased() ?? ""
+        let isSnoreRelated = SoundIdentifiers.snoreRelated.contains(eventName)
+        let isNonSnore = SoundIdentifiers.nonSnore.contains(eventName)
+        let gapThreshold = UserDefaults.standard.postProcessGapThreshold
+        let interruptionThreshold = UserDefaults.standard.postProcessShortInterruptionThreshold
+       
+        // 1. Check for gap-based finalization
+        if let lastProcessed = lastSoundEventProcessedTimestamp {
+            if currentEventTimestamp.timeIntervalSince(lastProcessed) > gapThreshold {
                 finalizeCurrentSnoreEventBatch()
             }
         }
 
-        if isSnoreRelated  {
+        // 2. Handle Timer: Reset it every time we process a new event
+        finalizationTimer?.invalidate()
+        finalizationTimer = nil
+
+        // 3. Aggregation Logic
+        if isSnoreRelated {
             currentSnoreEventsBatch.append(soundEvent)
+            // Only schedule a new timer if we have active data
             scheduleFinalizationTimer(gapThreshold: gapThreshold)
+        } else if isNonSnore {
+            // "Real-life" approach: We ignore the sound,
+            // but we do NOT reset the batch.
+            // We allow the timer to keep running from its previous start.
+            if !currentSnoreEventsBatch.isEmpty {
+                scheduleFinalizationTimer(gapThreshold: gapThreshold)
+            }
+            
+            // Use the Short Interruption Threshold:
+            // Only ignore the event if the gap is very small (e.g., < 1s).
+            // If the gap is longer, treat it as a significant interruption.
+            let timeSinceLast = currentEventTimestamp.timeIntervalSince(lastSoundEventProcessedTimestamp ?? Date.distantPast)
+            
+            if timeSinceLast <= interruptionThreshold {
+                print("Ignoring minor interruption: \(timeSinceLast) seconds")
+                // Do nothing, keep the batch open
+            } else {
+                finalizeCurrentSnoreEventBatch()
+            }
+            
         } else {
+            // Unknown sound: Close the batch
             finalizeCurrentSnoreEventBatch()
         }
 
         lastSoundEventProcessedTimestamp = currentEventTimestamp
     }
+
+    
 
     func finalizeRecordingSession() {
         finalizeCurrentSnoreEventBatch()

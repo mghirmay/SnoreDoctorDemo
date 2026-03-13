@@ -9,13 +9,37 @@
 import Foundation
 import AVFoundation
 
+
+struct SoundIdentifiers {
+    // Direct matches for the primary sound
+    static let snore = "snoring"
+    
+    // Sounds that often indicate airway resistance or "related" distress
+    static let snoreRelated: Set<String> = [
+        "snoring",
+        "pig_oink",
+        "gasping",     // Highly relevant for sleep apnea
+        "choking",     // Highly relevant for obstructive events
+        "heavy_breathing"
+    ]
+    
+    // Clearly distinct sounds
+    static let nonSnore: Set<String> = [
+        "speech",
+        "coughing",
+        "laughing",
+        "background_noise"
+    ]
+}
+
+
 // MARK: - Constants & Default Values
 struct AppSettings {
     
     // Playback Settings
     static let defaultInitialVolume: Double = 0.5
     static let defaultVolumeStep: Double = 0.1
-    static let defaultSilenceTimeout: TimeInterval = 12.0
+    static let defaultSilenceTimeout: TimeInterval = 27.0 //seconds
 
     // Analysis Defaults
     static let defaultUseCustomLLModel: Bool = false
@@ -25,13 +49,10 @@ struct AppSettings {
     static let defaultSampleRate: Double = 44100.0
 
     // Post-Processing Defaults
-    static let defaultPostProcessGapThreshold: Double = 5.0
+    static let defaultPostProcessGapThreshold: Double = 10.0
     static let defaultPostProcessSmoothingWindowSize: Int = 3
     static let defaultPostProcessShortInterruptionThreshold: Double = 1.0
 
-    // Identifiers
-    static let snoreEventIdentifier: String = "snoring"
-    static let snoreEventRelatedIdentifiers: Set<String> = ["snoring", "gasp", "breathing", "sigh", "whispering"]
 }
 
 // MARK: - UserDefaults Extension

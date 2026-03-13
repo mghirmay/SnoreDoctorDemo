@@ -8,9 +8,14 @@
 import SwiftUI
 import CoreData
 
+extension Notification.Name {
+    static let dataDidClear = Notification.Name("dataDidClear")
+}
+
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.managedObjectContext) private var viewContext
+    @EnvironmentObject var dataManager: SoundDataManager
 
     @State private var showingClearDataAlert = false
     @State private var clearDataSuccess = false
@@ -25,6 +30,8 @@ struct SettingsView: View {
                 PlaybackSettingsSection()
                 DataManagementSection(
                     clearDataAction: clearAllData,
+                    resetSettingsAction: resetSettingsToDefaults,
+                    repairDataAction: repairDatabase,
                     success: clearDataSuccess,
                     errorMessage: clearDataErrorMessage
                 )
@@ -46,7 +53,6 @@ struct SettingsView: View {
             } message: {
                 Text("Clear_Info".translate())
             }
-            .onAppear(perform: initializeDefaults)
         }.navigationViewStyle(.stack)
     }
 
@@ -63,6 +69,9 @@ struct SettingsView: View {
             viewContext.reset()
             clearAllAudioFiles()
             clearDataSuccess = true
+            
+            //Post the notification
+            NotificationCenter.default.post(name: .dataDidClear, object: nil)
         } catch {
             clearDataErrorMessage = error.localizedDescription
             viewContext.rollback()
@@ -70,51 +79,96 @@ struct SettingsView: View {
     }
 
     private func clearAllAudioFiles() {
-        let fileManager = FileManager.default
-        let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-
         do {
-            let fileURLs = try fileManager.contentsOfDirectory(at: documentsDirectory, includingPropertiesForKeys: nil)
-            for file in fileURLs where ["m4a", "wav"].contains(file.pathExtension) {
-                try fileManager.removeItem(at: file)
+            // Use your existing helper to get the specific Recordings folder
+            let recordingsFolder = try FileManager.getRecordingsFolderURL()
+            let fileManager = FileManager.default
+            
+            if fileManager.fileExists(atPath: recordingsFolder.path) {
+                let fileURLs = try fileManager.contentsOfDirectory(at: recordingsFolder, includingPropertiesForKeys: nil)
+                
+                for file in fileURLs {
+                    // Now we target the actual extensions you've been using
+                    if ["caf", "m4a", "wav"].contains(file.pathExtension.lowercased()) {
+                        try fileManager.removeItem(at: file)
+                    }
+                }
+                print("Successfully cleared all recordings from subfolder.")
             }
         } catch {
             clearDataErrorMessage = (clearDataErrorMessage ?? "") + "\nError deleting audio files: \(error.localizedDescription)"
         }
     }
-
-    private func initializeDefaults() {
-        let defaults = UserDefaults.standard
-        // New: Initialize useCustomLLModel
-        if defaults.object(forKey: "useCustomLLModel") == nil {
-            defaults.useCustomLLModel = AppSettings.defaultUseCustomLLModel
-        }
-        if defaults.object(forKey: "snoreConfidenceThreshold") == nil {
-            defaults.snoreConfidenceThreshold = AppSettings.defaultSnoreConfidenceThreshold
-        }
-        if defaults.string(forKey: "audioFormatPreference") == nil {
-            defaults.audioFormatPreference = .aac
-        }
-        if defaults.double(forKey: "sampleRatePreference") == 0 {
-            defaults.sampleRatePreference = 44100.0
-        }
-        if defaults.string(forKey: "audioQualityPreference") == nil {
-            defaults.audioQualityPreference = .high
-        }
-        if defaults.object(forKey: "analysisWindowDuration") == nil {
-            defaults.analysisWindowDuration = AppSettings.defaultAnalysisWindowDuration
-        }
-        if defaults.object(forKey: "analysisOverlapFactor") == nil {
-            defaults.analysisOverlapFactor = AppSettings.defaultAnalysisOverlapFactor
-        }
-        if defaults.object(forKey: "postProcessGapThreshold") == nil {
-            defaults.postProcessGapThreshold = AppSettings.defaultPostProcessGapThreshold
-        }
-        if defaults.object(forKey: "postProcessSmoothingWindowSize") == nil {
-            defaults.postProcessSmoothingWindowSize = AppSettings.defaultPostProcessSmoothingWindowSize
-        }
-        if defaults.object(forKey: "postProcessShortInterruptionThreshold") == nil {
-            defaults.postProcessShortInterruptionThreshold = AppSettings.defaultPostProcessShortInterruptionThreshold
+    
+    
+    private func repairDatabase() {
+        clearDataSuccess = false
+        clearDataErrorMessage = nil
+        
+        do {
+            // 1. RECONCILE INCOMPLETE SESSIONS (Logic you provided)
+            // Fixes "Zombie" sessions that didn't save an end time
+            // Use the existing logic from your manager!
+            dataManager.reconcileIncompleteSessions(in: viewContext)
+            
+            // 2. REMOVE ORPHANED SESSIONS
+            // Fixes entries where the audio file is actually missing from disk
+            let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
+            let sessions = try viewContext.fetch(fetchRequest)
+            let folder = try FileManager.getRecordingsFolderURL()
+            var repairCount = 0
+            
+            for session in sessions {
+                if let fileName = session.audioFileName {
+                    let fileURL = folder.appendingPathComponent(fileName)
+                    if !FileManager.default.fileExists(atPath: fileURL.path) {
+                        viewContext.delete(session)
+                        repairCount += 1
+                    }
+                } else if session.startTime == nil {
+                    // If the session doesn't even have a start time, it's garbage
+                    viewContext.delete(session)
+                    repairCount += 1
+                }
+            }
+            
+            if viewContext.hasChanges {
+                try viewContext.save()
+            }
+            
+            clearDataSuccess = true
+            print("Database Repair & Reconciliation complete.")
+            
+        } catch {
+            clearDataErrorMessage = "Repair failed: \(error.localizedDescription)"
+            viewContext.rollback()
         }
     }
+    
+    private func resetSettingsToDefaults() {
+        clearDataSuccess = false
+        clearDataErrorMessage = nil
+        
+        let standard = UserDefaults.standard
+        
+        // Analysis
+        standard.useCustomLLModel = AppSettings.defaultUseCustomLLModel
+        standard.snoreConfidenceThreshold = AppSettings.defaultSnoreConfidenceThreshold
+        standard.analysisWindowDuration = AppSettings.defaultAnalysisWindowDuration
+        standard.analysisOverlapFactor = AppSettings.defaultAnalysisOverlapFactor
+        
+        // Post-Processing
+        standard.postProcessGapThreshold = AppSettings.defaultPostProcessGapThreshold
+        standard.postProcessSmoothingWindowSize = AppSettings.defaultPostProcessSmoothingWindowSize
+        standard.postProcessShortInterruptionThreshold = AppSettings.defaultPostProcessShortInterruptionThreshold
+        
+        // Playback
+        standard.initialVolume = AppSettings.defaultInitialVolume
+        standard.volumeStep = AppSettings.defaultVolumeStep
+        standard.silenceTimeout = AppSettings.defaultSilenceTimeout
+        
+        clearDataSuccess = true
+        print("Settings reset to defaults.")
+    }
+
 }

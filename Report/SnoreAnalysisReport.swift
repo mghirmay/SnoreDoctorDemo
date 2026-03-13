@@ -8,14 +8,13 @@
 import SwiftUI
 import CoreData
 
-struct SnoreDoctorChartView: View {
+struct SnoreAnalysisReport: View {
+    @EnvironmentObject var soundDataManager: SoundDataManager
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) var dismiss // Add this line
 
-    @StateObject private var soundDataManager: SoundDataManager
 
-
-    
+    @State private var isFixing = false
     @State private var selectedSessionID: UUID?
     @State private var selectedRecordingSession: RecordingSession?
 
@@ -37,9 +36,7 @@ struct SnoreDoctorChartView: View {
         self.isLiveSessionActive = isLiveSessionActive
         self.currentLiveSessionID = currentLiveSessionID
 
-        // Use PersistenceController.shared.container.viewContext for the main app
-        _soundDataManager = StateObject(wrappedValue: SoundDataManager(context: PersistenceController.shared.container.viewContext))
-        
+
         // Initialize with no data until a session is selected
         _soundEvents = FetchRequest<SoundEvent>(
             sortDescriptors: [NSSortDescriptor(keyPath: \SoundEvent.timestamp, ascending: true)],
@@ -74,7 +71,7 @@ struct SnoreDoctorChartView: View {
 
                         ForEach(allRecordingSessions) { session in
                             if let id = session.id, let startTime = session.startTime {
-                                Text(session.title ?? SnoreDoctorChartView.sessionDateFormatter.string(from: startTime))
+                                Text(session.title ?? SnoreAnalysisReport.sessionDateFormatter.string(from: startTime))
                                     .tag(id as UUID?)
                             }
                         }
@@ -100,31 +97,50 @@ struct SnoreDoctorChartView: View {
                     }
                     .buttonStyle(.borderedProminent) // Use a prominent style for clarity
                     .disabled(selectedRecordingSession == nil) // Disable if no session is selected
+                    
+                 
+                    Button(action: {
+                        isFixing = true
+                        // Move to background to keep UI snappy
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            soundDataManager.reconcileIncompleteSessions(in: viewContext)
+                            
+                            DispatchQueue.main.async {
+                                isFixing = false
+                                // Optional: trigger a haptic feedback or local notification here
+                            }
+                        }
+                    }) {
+                        if isFixing {
+                            ProgressView()
+                        } else {
+                            Label("Fix Data", systemImage: "arrow.clockwise.icloud")
+                        }
+                    }
                 }
                 .padding(.horizontal) // Apply padding to the entire HStack
                 .padding(.top, 5)
 
-                ScrollView {
-                    VStack {
-                        // MARK: - Chart Section
-                        SnoreEventChartContent(snoreEvents: snoreEvents)
+                VStack {
+                    // MARK: - Chart Section
+                    SnoreEventChartContent(snoreEvents: snoreEvents)
 
-                        // MARK: - Event List Section
-                        if soundEvents.isEmpty {
-                            ContentUnavailableView(
-                                "No Sound Events",
-                                systemImage: "waveform",
-                                description: Text("Start an analysis session or select a recorded session.")
-                            )
-                            .frame(minHeight: 400)
-                        } else {
-                            SnoreEventListView(
-                                session: selectedRecordingSession,
-                                playbackDelegate: playbackViewModel
-                            )
-                            .frame(minHeight: 600, maxHeight: .infinity)
-                        }
+                    // MARK: - Event List Section
+                    if soundEvents.isEmpty {
+                        ContentUnavailableView(
+                            "No Sound Events",
+                            systemImage: "waveform",
+                            description: Text("Start an analysis session or select a recorded session.")
+                        )
+                        .frame(minHeight: 400)
+                    } else {
+                        SnoreEventListView(
+                            session: selectedRecordingSession,
+                            playbackDelegate: playbackViewModel
+                        )
+                        .frame(minHeight: 600, maxHeight: .infinity)
                     }
+                
                 }
             }
             .navigationTitle("Session Chart")
@@ -177,20 +193,28 @@ struct SnoreDoctorChartView: View {
         }
 
         selectedRecordingSession = sessionToSelect
-
+        
+      
         // Load audio file if available
         if let session = selectedRecordingSession,
-           let audioFileName = session.audioFileName,
-           !audioFileName.isEmpty {
-            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let audioURL = documentsDirectory.appendingPathComponent(audioFileName)
+               let fileName = session.audioFileName, !fileName.isEmpty {
+                
+                do {
+                    // 1. Get the base folder
+                    let recordingsFolder = try FileManager.getRecordingsFolderURL()
+                    
+                    // 2. Append the filename stored in the database
+                    let audioURL = recordingsFolder.appendingPathComponent(fileName)
 
-            if FileManager.default.fileExists(atPath: audioURL.path) {
-                playbackViewModel.setupAudioPlayer(url: audioURL)
-            } else {
-                print("Audio file not found: \(audioURL.lastPathComponent)")
-                playbackViewModel.stop()
-            }
+                    // 3. Verify and play
+                    if FileManager.default.fileExists(atPath: audioURL.path) {
+                        playbackViewModel.setupAudioPlayer(url: audioURL)
+                    } else {
+                        print("File defined in DB but not found on disk: \(fileName)")
+                    }
+                } catch {
+                    print("Could not resolve recordings directory: \(error)")
+                }
         } else {
             playbackViewModel.stop()
         }

@@ -45,9 +45,7 @@ class SnoreEventPostProcessor: SnoreEventCreator {
             }
 
             let gapThreshold: Double = UserDefaults.standard.postProcessGapThreshold
-            let snoreIdentifiers: Set<String> = AppSettings.snoreEventRelatedIdentifiers
-            
-            let isSnoreRelated = snoreIdentifiers.contains(soundEvent.name?.lowercased() ?? "")
+            let isSnoreRelated = SoundIdentifiers.snoreRelated.contains(soundEvent.name?.lowercased() ?? "")
 
             if isSnoreRelated {
                 if let lastTimestamp = lastSnoreRelatedEventTimestamp,

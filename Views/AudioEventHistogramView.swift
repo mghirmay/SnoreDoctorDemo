@@ -39,7 +39,7 @@ struct AudioEventHistogramView: View {
             .chartYAxis(.hidden)
             .chartBackground { proxy in
                 GeometryReader { geometry in
-                    let plotFrame = geometry[proxy.plotAreaFrame] // resolve anchor here
+                    let plotFrame = geometry[proxy.plotFrame!] // resolve anchor here
 
                     ZStack(alignment: .leading) {
                         ForEach(sleepSessions) { session in

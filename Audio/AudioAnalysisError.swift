@@ -12,15 +12,19 @@ import Foundation
 
 
 enum AudioAnalysisError: Error, LocalizedError {
+    case noActiveSession
     case audioSessionSetupFailed(Error)
     case recordingSetupFailed(Error)
     case permissionDenied
     case audioStreamInterrupted
     case invalidState(String)
     case unexpected(Error)
+    case audioInputUnavailable(Error)
 
     var errorDescription: String? {
         switch self {
+        case .noActiveSession:
+            return "No active Recording session found."
         case .audioSessionSetupFailed(let error):
             return "Failed to set up audio session: \(error.localizedDescription)"
         case .recordingSetupFailed(let error):
@@ -29,11 +33,15 @@ enum AudioAnalysisError: Error, LocalizedError {
             return "Microphone permission denied. Please enable it in Settings."
         case .audioStreamInterrupted:
             return "The audio session was interrupted by the system (e.g., phone call)."
- 
+            
         case .invalidState(let message):
             return "Invalid app state: \(message)"
         case .unexpected(let error):
             return "An unexpected error occurred: \(error.localizedDescription)"
+        case .audioInputUnavailable(let error):
+            return "An audioInput Unavailable error occurred: \(error.localizedDescription)"
+      
+
         }
     }
 }

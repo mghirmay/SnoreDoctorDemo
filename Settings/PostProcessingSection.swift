@@ -14,40 +14,43 @@ struct PostProcessingSection: View {
     @AppStorage("postProcessShortInterruptionThreshold") var shortGap: Double = AppSettings.defaultPostProcessShortInterruptionThreshold
 
     var body: some View {
-        Section("Snore Event Post-Processing".translate()) {
-            SettingSliderDouble(
-                title: "Gap Threshold".translate(),
-                value: $gap,
-                range: 1.0...10.0,
-                step: 0.5,
-                minLabel: "1s",
-                maxLabel: "10s",
-                valueFormatter: { value in // Pass the formatter closure here
-                    "\(String(format: "%.1f", value)) s"
+        Section(header: Text("Snore Event Post-Processing".translate())) {
+            
+            // Gap Threshold
+            VStack {
+                HStack {
+                    Text("Gap Threshold".translate())
+                    Spacer()
+                    Text("\(String(format: "%.1f", gap)) s")
+                        .foregroundColor(.secondary)
                 }
-            )
-
-            SettingSliderInt(
-                title: "Smoothing Window Size".translate(),
-                value: $windowSize,
-                range: 1...7,
-                step: 1,
-                minLabel: "1",
-                maxLabel: "7",
-                valueFormatter: { value in // Pass the formatter closure here
-                    "\(value) events"
+                Slider(value: $gap, in: 1.0...30.0, step: 0.5)
+            }
+            
+            // Smoothing Window
+            VStack {
+                HStack {
+                    Text("Smoothing Window Size".translate())
+                    Spacer()
+                    Text("\(windowSize) events")
+                        .foregroundColor(.secondary)
                 }
-            )
-
-            SettingSliderDouble(
-                title: "Short Interruption Threshold".translate(),
-                value: $shortGap,
-                range: 0.1...2.0,
-                step: 0.1,
-                minLabel: "0.1s",
-                maxLabel: "2.0s",
-                valueFormatter: { value in String(format: "%.1f s", value) }
-            )
+                Slider(value: Binding(
+                    get: { Double(windowSize) },
+                    set: { windowSize = Int($0) }
+                ), in: 1...10, step: 1)
+            }
+            
+            // Short Interruption Threshold
+            VStack {
+                HStack {
+                    Text("Short Interruption Threshold".translate())
+                    Spacer()
+                    Text("\(String(format: "%.1f", shortGap)) s")
+                        .foregroundColor(.secondary)
+                }
+                Slider(value: $shortGap, in: 0.1...3.0, step: 0.1)
+            }
         }
     }
 }

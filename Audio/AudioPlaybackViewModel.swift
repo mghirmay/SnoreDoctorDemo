@@ -170,13 +170,13 @@ class AudioPlaybackViewModel: NSObject, ObservableObject, SoundEventPlaybackDele
             return
         }
 
-        // 3. Construct file URL
-        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            errorMessage = "Could not find documents directory."
-            completion(false) // Signal failure
+        // 3. Construct file URL using your Helper Extension
+        // Instead of appending to .documentDirectory manually:
+        guard let audioFileURL = try? FileManager.getURL(forSessionID: session.id!) else {
+            self.errorMessage = "Could not resolve audio file path."
+            completion(false)
             return
         }
-        let audioFileURL = documentsDirectory.appendingPathComponent(fileName)
 
         // 4. Check if file exists
         guard FileManager.default.fileExists(atPath: audioFileURL.path) else {

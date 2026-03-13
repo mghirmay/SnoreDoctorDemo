@@ -41,7 +41,7 @@ struct BarChart: View {
                     AxisMarks {
                         AxisGridLine()
                         AxisTick()
-                        AxisValueLabel(xLabel ?? "Category")
+                        AxisValueLabel()
                     }
                 }
                 .chartYAxis {

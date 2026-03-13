@@ -10,13 +10,13 @@ import SwiftUI
 import Charts // Requires iOS 16+
 import CoreData
 
-struct SessionSidebarList: View {
+struct SessionSidebarListView: View {
+    @EnvironmentObject var soundDataManager: SoundDataManager
     let selectedDate: Date
-    @ObservedObject var manager: SoundDataManager
     
     var body: some View {
         // We fetch the sessions specific to the date selected in the calendar
-        let sessions = manager.fetchRecordingSessions(for: selectedDate)
+        let sessions = soundDataManager.fetchRecordingSessions(for: selectedDate)
         
         if sessions.isEmpty {
             // This fills the space with a helpful message if no data exists

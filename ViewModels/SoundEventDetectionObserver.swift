@@ -23,46 +23,24 @@ protocol SoundEventDetectionObserverDelegate: AnyObject {
 class SoundEventDetectionObserver: NSObject, SNResultsObserving {
     weak var delegate: SoundEventDetectionObserverDelegate?
     
-    
-    // The SoundDataManager and NSManagedObjectContext for Core Data operations
-    private let soundDataManager =  SoundDataManager()
-    
-    // MARK: - Event Counters
-    private var totalSnoreEventsDetected: Int = 0
-    private var totalSnoreRelatedEventsDetected: Int = 0 // Includes 'snoring'
-    private var totalNonSnoreEventsDetected: Int = 0
-
-    // NEW: Internal flag to control if processing of results should occur
-    private var isProcessingActive: Bool = true
-
-
-    // MARK: - Recording Session and Aggregator
-    weak var currentRecordingSession: RecordingSession? {
-        didSet {
-            // When a new recording session is assigned (e.g., recording starts)
-            if let session = currentRecordingSession {
-                // Ensure context is available. Assuming PersistenceController is globally accessible.
-                let context = PersistenceController.shared.container.viewContext
-                self.snoreAggregator = SnoreEventRealtimeAggregator(context: context, for: session)
-    
-                // Reset event counters for the new session to start fresh
-                self.totalSnoreEventsDetected = 0
-                self.totalSnoreRelatedEventsDetected = 0
-                self.totalNonSnoreEventsDetected = 0
-                self.isProcessingActive = true // Ensure active when a new session starts
-                
-                print("SoundEventDetectionObserver: SnoreEventRealtimeAggregator and event counters initialized for new session.")
-            } else {
-                // If the session becomes nil (e.g., recording stopped)
-                snoreAggregator?.finalizeRecordingSession() // Ensure any pending snore events are saved
-                snoreAggregator = nil // Clear the aggregator
-                self.isProcessingActive = false // Mark as inactive when no session
-                print("SoundEventDetectionObserver: SnoreEventRealtimeAggregator finalized and cleared.")
-            }
+    // The observer now "owns" the active session
+    private(set) var currentRecordingSession: RecordingSession?
+    var activeRecordingSessionURL: URL? {
+        guard let session = currentRecordingSession, let id = session.id else {
+            return nil
         }
+        // Use your standardized helper!
+        return try? FileManager.getURL(forSessionID: id)
     }
 
+    
+    // NEW: Internal flag to control if processing of results should occur
+    private var isProcessingActive: Bool = true
+    
     private var snoreAggregator: SnoreEventRealtimeAggregator?
+    
+    private let soundDataManager: SoundDataManager
+
 
     // MARK: - Initialization
 
@@ -70,10 +48,69 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
     /// - Parameters:
     ///   - delegate: The object that will receive notifications about detected events and analysis status.
     ///   - context: The Core Data `NSManagedObjectContext` to be used for saving `SoundEvent`s and updating `RecordingSession` counts.
-    init(delegate: SoundEventDetectionObserverDelegate, context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+    init(delegate: SoundEventDetectionObserverDelegate, context: NSManagedObjectContext = PersistenceController.shared.container.viewContext, soundDataManager: SoundDataManager) {
         self.delegate = delegate
+        self.soundDataManager = soundDataManager
         super.init()
     }
+
+    
+    // Add a method to initialize the session internally
+    func startNewSession(context: NSManagedObjectContext){
+        
+        let sessionID = UUID()
+            
+        do {
+            // Reset event counters for the new session to start fresh
+            self.isProcessingActive = true // Ensure active when a new session starts
+            let recordingURL = try FileManager.getURL(forSessionID: sessionID)
+            
+            let newSession = RecordingSession(context: context)
+            newSession.id = sessionID
+            newSession.startTime = Date()
+            //newSession.endTime = Date()
+            // Update the session's integer properties
+            newSession.totalSnoreEvents = 0
+            newSession.totalSnoreRelated = 0
+            newSession.totalNonSnoreEvents = 0
+            
+            newSession.notes = nil
+            newSession.audioFileName = recordingURL.lastPathComponent
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "EEEE, MMM d, h:mm a"
+            newSession.title = dateFormatter.string(from: newSession.startTime ?? Date())
+            
+            //
+            self.currentRecordingSession = newSession
+            
+            // Initialize your aggregator here
+            self.snoreAggregator = SnoreEventRealtimeAggregator(context: context, for: newSession)
+            print("SoundEventDetectionObserver: SnoreEventRealtimeAggregator and event counters initialized for new session.")
+  
+        }
+        catch {
+            // Handle the failure!
+            // This is crucial: if this fails, you probably shouldn't start recording.
+            print("Failed to create recording file: \(error.localizedDescription)")
+            // Stop the session creation if we can't save the file
+        }
+    }
+    
+    
+    
+ 
+    
+    func finalizeSession() {
+        // Handle logic when recording stops
+        // Update Core Data session end time and save
+        updateSessionCountsAndSave(updateEndTime : true)
+        self.currentRecordingSession = nil
+        self.snoreAggregator = nil
+    }
+
+   
+
+
 
     // MARK: - Control Methods (Added for completeness, manage internal state)
 
@@ -107,40 +144,30 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         guard let classificationResult = result as? SNClassificationResult else { return }
 
         // Determine the duration of the analyzed sound event
-        let eventDuration: Double
+        let windowDuration: Double
         if let classifyRequest = request as? SNClassifySoundRequest {
-            eventDuration = classifyRequest.windowDuration.seconds
+            windowDuration = classifyRequest.windowDuration.seconds
         } else {
-            eventDuration = 1.0 // Fallback duration if request type is unexpected
-            print("Warning: Request is not an SNClassifySoundRequest or windowDuration not available. Using default duration of \(eventDuration)s.")
+            windowDuration = 1.0 // Fallback duration if request type is unexpected
+            print("Warning: Request is not an SNClassifySoundRequest or windowDuration not available. Using default duration of \(windowDuration)s.")
         }
 
         let requiredConfidence = UserDefaults.standard.snoreConfidenceThreshold // Get confidence threshold from UserDefaults
         
-        // Use current time as the timestamp for the detected event.
-        // You might adjust this to be relative to the recording session's start time if precise synchronization is needed.
-        let timestamp = Date()
-
+   
         if let topClassification = classificationResult.classifications.first {
             let identifierToSave = topClassification.identifier
             let confidenceToSave = topClassification.confidence
 
             // --- Update Event Counters ---
             // Categorize and increment counts based on AppSettings definitions
-            let isSnore = AppSettings.snoreEventIdentifier.contains(identifierToSave.lowercased())
-            let isSnoreRelated = AppSettings.snoreEventRelatedIdentifiers.contains(identifierToSave.lowercased())
+            let isSnore = SoundIdentifiers.snore.contains(identifierToSave.lowercased())
+            let isSnoreRelated = SoundIdentifiers.snoreRelated.contains(identifierToSave.lowercased())
+            let isNonSnoreEvent = SoundIdentifiers.nonSnore.contains(identifierToSave.lowercased())
 
-            if isSnore {
-                totalSnoreEventsDetected += 1
-            }
-            if isSnoreRelated {
-                totalSnoreRelatedEventsDetected += 1
-            } else {
-                // This event is neither "snoring" nor "snore-related" (like gasp, breathing, etc.)
-                totalNonSnoreEventsDetected += 1
-            }
-            // --- End Update Event Counters ---
-
+           
+            
+        
             // Check if the event meets the UI display confidence threshold
             if topClassification.confidence > requiredConfidence {
                 let confidenceDisplay = String(format: "%.2f", confidenceToSave * 100)
@@ -152,31 +179,48 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
                 }
                 
         
-                if isSnore {
-                    // Only play if not already playing to avoid overlapping sounds
-                    // Play the random sound snippet
-                    SnorePlaybackManager.shared.notifySnoreDetected()
+                
+                // Regardless of UI display confidence, save the raw SoundEvent to Core Data
+                // and pass it to the real-time aggregator for SnoreEvent grouping.
+                if let session = self.currentRecordingSession {
+                    
+                    // Update the session's "Last Seen" timestamp
+                    session.lastUpdate = Date()
+                    // Update the session's integer properties
+                    if isSnore {
+                        session.totalSnoreEvents += 1
+                        // Only play if not already playing to avoid overlapping sounds
+                        // Play the random sound snippet
+                        AudioPlaybackManager.shared.notifySnoreDetected()
+                            
+                    } else if isSnoreRelated {
+                            session.totalSnoreRelated += 1
+                    }
+                    else if isNonSnoreEvent {
+                        session.totalNonSnoreEvents += 1
+                    }
+             
+                    let createdSoundEvent = self.soundDataManager.saveSoundEvent(
+                        identifier: identifierToSave,
+                        confidence: confidenceToSave,
+                        session: session,
+                        isSnoreRelated: isSnoreRelated
+                    )
+                    // Pass the newly created (and saved) SoundEvent to the real-time aggregator
+                    self.snoreAggregator?.processNewSoundEvent(createdSoundEvent)
+                    
+                    
+              
+                 
+                } else {
+                    print("Error: currentRecordingSession is nil. SoundEvent '\(identifierToSave)' not saved with session.")
                 }
                 
             } else {
                 print("Event '\(identifierToSave)' with confidence \(confidenceToSave) below display threshold (\(requiredConfidence)).")
             }
             
-            // Regardless of UI display confidence, save the raw SoundEvent to Core Data
-            // and pass it to the real-time aggregator for SnoreEvent grouping.
-            if let session = self.currentRecordingSession {
-                let createdSoundEvent = self.soundDataManager.saveSoundEvent(
-                    identifier: identifierToSave,
-                    confidence: confidenceToSave,
-                    session: session,
-                    duration: eventDuration,
-                    timeStamp: timestamp
-                )
-                // Pass the newly created (and saved) SoundEvent to the real-time aggregator
-                self.snoreAggregator?.processNewSoundEvent(createdSoundEvent)
-            } else {
-                print("Error: currentRecordingSession is nil. SoundEvent '\(identifierToSave)' not saved with session.")
-            }
+         
         }
     }
 
@@ -188,7 +232,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         snoreAggregator = nil // Clear the aggregator instance
         
         // Save the accumulated counts to the RecordingSession Core Data object
-        updateSessionCountsAndSave()
+        updateSessionCountsAndSave(updateEndTime: true)
         
         currentRecordingSession = nil // Clear the session reference
         
@@ -207,7 +251,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         snoreAggregator = nil // Clear the aggregator instance
         
         // Save the accumulated counts to the RecordingSession Core Data object
-        updateSessionCountsAndSave()
+        updateSessionCountsAndSave(updateEndTime: true)
         
         currentRecordingSession = nil // Clear the session reference
         
@@ -222,7 +266,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
 
     /// Updates the `RecordingSession`'s count properties in Core Data with the current accumulated totals
     /// and saves the `managedObjectContext`. This is typically called when a recording session concludes.
-    public func updateSessionCountsAndSave() {
+    private func updateSessionCountsAndSave(updateEndTime : Bool) {
         // Inside updateSessionCountsAndSave()
         guard let session = currentRecordingSession else {
             print("Cannot update session counts: currentRecordingSession is nil during save attempt.")
@@ -231,20 +275,24 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
 
         print("Pre-update session counts: Snore=\(session.totalSnoreEvents), Related=\(session.totalSnoreRelated), Non-Snore=\(session.totalNonSnoreEvents)")
 
+        session.endTime = Date() // Set the end time for the session
         
-        // Assign the aggregated counts to the RecordingSession Core Data object
-        session.totalSnoreEvents = Int32(totalSnoreEventsDetected)
-        session.totalSnoreRelated = Int32(totalSnoreRelatedEventsDetected)
-        session.totalNonSnoreEvents = Int32(totalNonSnoreEventsDetected)
-
-        // Only set endTime here if it hasn't been set by MainViewController's stopAudioAnalysis().
-        // MainViewController is responsible for setting endTime when the overall recording stops.
-        // This method is called from `requestDidComplete` and `requestDidFailWithError` in case the
-        // SoundAnalysis request itself ends prematurely, but the main session lifecycle is in MainViewController.
-        // Consider whether `session.endTime = Date()` here is redundant or could overwrite a more accurate time
-        // set by `MainViewController`. For now, I'll comment it out, as MainViewController handles this.
-        // session.endTime = Date()
-
+        // Perform the calculation sleep quality
+        let start = session.startTime ?? Date()
+        let end = session.endTime ?? Date()
+        let durationHours = end.timeIntervalSince(start) / 3600.0
+        let totalSnoreEventsDetected = Int(session.totalSnoreEvents);
+        let totalSnoreRelatedEventsDetected = Int(session.totalSnoreRelated);
+        let totalNonSnoreEventsDetected = Int(session.totalNonSnoreEvents);
+     
+        session.qualityScore = calculateQualityScore(
+            snoreCount: totalSnoreEventsDetected,
+                relatedCount: totalSnoreRelatedEventsDetected,
+                nonSnoreCount: totalNonSnoreEventsDetected,
+                durationInHours: durationHours
+            )
+        
+   
         print("Post-update session counts (in memory): Snore=\(session.totalSnoreEvents), Related=\(session.totalSnoreRelated), Non-Snore=\(session.totalNonSnoreEvents)")
 
         // Crucial check: Does the context actually have changes?
@@ -254,5 +302,30 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
             soundDataManager.saveContext()
             print("Session counts saved to Core Data for session \(session.id?.uuidString ?? "N/A"): Snore=\(totalSnoreEventsDetected), Related=\(totalSnoreRelatedEventsDetected), Non-Snore=\(totalNonSnoreEventsDetected)")
         }
+    }
+    
+    
+    
+    /// Calculates the sleep quality score based on detected audio events.
+    /// Returns a Double between 0.0 (Poor) and 1.0 (Excellent).
+    private func calculateQualityScore(
+        snoreCount: Int,
+        relatedCount: Int,
+        nonSnoreCount: Int,
+        durationInHours: Double
+    ) -> Double {
+        let totalEvents = Double(snoreCount + relatedCount + nonSnoreCount)
+        
+        // If no events detected, consider it a perfect, quiet night
+        guard totalEvents > 0 else { return 1.0 }
+        
+        // Calculate ratio of "problem" events vs total activity
+        let problemEvents = Double(snoreCount + relatedCount)
+        let cleanlinessRatio = 1.0 - (problemEvents / totalEvents)
+        
+        // Penalize short sessions (e.g., sessions under 4 hours are marked down)
+        let durationMultiplier = min(durationInHours / 4.0, 1.0)
+        
+        return cleanlinessRatio * durationMultiplier
     }
 }

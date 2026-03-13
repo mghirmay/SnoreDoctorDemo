@@ -89,104 +89,74 @@ struct SnoreEventChartContent: View {
             }
         }
     }
-
+    
     @ViewBuilder
     private func chartView(for type: ChartType) -> some View {
+        // 1. Create a common wrapper for all charts
+        VStack(spacing: 0) {
+            // Shared Title/Help Area
+            HStack {
+                Text(type.rawValue).font(.headline)
+                Spacer()
+                HelpPopoverButton(info: HelpDataFactory.definition(for: type))
+            }
+            .padding(.bottom, 8)
+            
+            // 2. The Chart Logic
+            renderContent(for: type)
+        }
+    }
+
+    @ViewBuilder
+    private func renderContent(for type: ChartType) -> some View {
         switch type {
-        case .snoreConfidenceBoxPlot:
-            BoxPlotChart(
-                data: snoreEvents.map { $0.averageConfidence },
-                title: type.rawValue
-          
-            )
-
-        case .snoreDurationBoxPlot:
-            BoxPlotChart(
-                data: snoreEvents.map { $0.duration },
-                title: type.rawValue
-            )
-
-        case .snoreEventCountBoxPlot:
-            BoxPlotChart(
-                data: snoreEvents.map { Double($0.count) },
-                title: type.rawValue
-            )
-
-        case .snoreDurationOverTime:
-            Chart {
-                ForEach(snoreEvents, id: \.self) { event in
-                    if let start = event.startTime {
-                        LineMark(
-                            x: .value("Time", start),
-                            y: .value("Duration (s)", event.duration)
-                        )
-                        PointMark(
-                            x: .value("Time", start),
-                            y: .value("Duration (s)", event.duration)
-                        )
-                        .annotation(position: .overlay, alignment: .top) {
-                            Text(event.duration, format: .number.precision(.fractionLength(1)))
-                                .font(.caption2)
-                                .opacity(0.8)
-                        }
-                    }
-                }
-            }
-            .chartXAxisLabel("Time")
-            .chartYAxisLabel("Duration (s)")
-            .chartPlotStyle { plot in
-                plot.background(Color.clear)
-            }
-            .overlay(
-                Text(type.rawValue)
-                    .font(.headline)
-                    .padding(.top, 4),
-                alignment: .top
-            )
-
+        case .snoreConfidenceBoxPlot, .snoreDurationBoxPlot, .snoreEventCountBoxPlot:
+            let data = (type == .snoreConfidenceBoxPlot) ? snoreEvents.map { $0.averageConfidence } :
+                       (type == .snoreDurationBoxPlot) ? snoreEvents.map { $0.duration } :
+                       snoreEvents.map { Double($0.count) }
+            BoxPlotChart(data: data, title: type.rawValue)
+                
         case .snoreConfidenceOverTime, .snoreEventCountOverTime:
-            // Custom LineChart implementation
-             LineChart(
-                 data: snoreEvents.compactMap { event in
-                     guard let start = event.startTime else { return nil }
-                     return (
-                         start,
-                         type == .snoreConfidenceOverTime ? event.averageConfidence : Double(event.count)
-                     )
-                 },
-                 title: type.rawValue,
-                 xLabel: "Time",
-                 yLabel: type == .snoreConfidenceOverTime ? "Confidence (0-1)" : "Count (Events)"
-             )
-
-        case .snoreSoundEventComposition:
-            let aggregatedHistogram = snoreEvents.reduce(into: [String: Int]()) { result, event in
-                if let histogram = event.soundEventNamesHistogram as? [String: Int] {
-                    for (key, value) in histogram {
-                        result[key, default: 0] += value
-                    }
-                }
-            }
-            BarChart(
-                data: aggregatedHistogram,
-                title: type.rawValue
-            )
-
-        case .snoreConfidenceVsDuration:
-            // ScatterChart already has good labels, just ensuring they use rawValue
-            ScatterChart(
-                data: snoreEvents.compactMap { event in
-                    guard let start = event.startTime else { return nil }
-                    return (
-                        x: event.duration,
-                        y: event.averageConfidence,
-                        label: "Snore at \(start.formatted(date: .omitted, time: .shortened))"
-                    )
+            LineChart(
+                data: snoreEvents.compactMap { e in
+                    guard let start = e.startTime else { return nil }
+                    return (start, type == .snoreConfidenceOverTime ? e.averageConfidence : Double(e.count))
                 },
-                title: type.rawValue,
-                xLabel: "Duration (s)",
-                yLabel: "Confidence (0-1)"
+                title: type.rawValue, xLabel: "Time", yLabel: "Value"
             )
+            
+        case .snoreSoundEventComposition:
+            // Using SectorMark for a Donut Chart representation
+            let histogram = aggregateHistogram()
+            Chart(histogram.sorted(by: { $0.value > $1.value }), id: \.key) { key, value in
+                SectorMark(
+                    angle: .value("Count", value),
+                    innerRadius: .ratio(0.6), // Creates the Donut look
+                    outerRadius: .inset(10)
+                )
+                .foregroundStyle(by: .value("Type", key))
+            }
+            .chartLegend(position: .bottom)
+            
+        case .snoreConfidenceVsDuration:
+            ScatterChart(
+                data: snoreEvents.compactMap { e in
+                    guard let start = e.startTime else { return nil }
+                    return (x: e.duration, y: e.averageConfidence, label: "Snore at \(start.formatted(date: .omitted, time: .shortened))")
+                },
+                title: type.rawValue, xLabel: "Duration (s)", yLabel: "Confidence"
+            )
+        default:
+            Text("Chart type not yet implemented")
+        }
+    }
+    
+    
+    private func aggregateHistogram() -> [String: Int] {
+        return snoreEvents.reduce(into: [String: Int]()) { result, event in
+            if let dict = event.soundEventNamesHistogram as? [String: Int] {
+                for (key, value) in dict { result[key, default: 0] += value }
+            }
         }
     }
 }

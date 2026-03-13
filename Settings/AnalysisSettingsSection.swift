@@ -8,54 +8,52 @@
 import SwiftUI
 import CoreData
 
+
 struct AnalysisSettingsSection: View {
-    // Using AppStorage is the cleanest way to bind UserDefaults to SwiftUI Toggles
     @AppStorage("useCustomLLModel") var useCustomLLModel: Bool = AppSettings.defaultUseCustomLLModel
-    
     @AppStorage("snoreConfidenceThreshold") var confidenceThreshold: Double = AppSettings.defaultSnoreConfidenceThreshold
     @AppStorage("analysisWindowDuration") var analysisWindowDuration: Double = AppSettings.defaultAnalysisWindowDuration
     @AppStorage("analysisOverlapFactor") var analysisOverlapFactor: Double = AppSettings.defaultAnalysisOverlapFactor
 
     var body: some View {
-        Section("Analysis Settings".translate()) {
-            Toggle("Use Custom LL Model".translate(), isOn: $useCustomLLModel)
-                            .tint(Color("AppColor"))
+        Section(header: Text("Analysis Settings".translate())) {
             
-            SettingSliderDouble(
-                title: "Detection Confidence Threshold".translate(),
-                value: $confidenceThreshold,
-                range: 0.1...0.9,
-                step: 0.05,
-                minLabel: "10%",
-                maxLabel: "90%",
-                valueFormatter: { value in // Updated to use the valueFormatter closure
-                    "\(Int(value * 100))%"
+            // Toggle for Model Selection
+            Toggle("Use Custom LL Model".translate(), isOn: $useCustomLLModel)
+                .tint(Color("AppColor"))
+            
+            // Detection Confidence Threshold
+            VStack {
+                HStack {
+                    Text("Detection Confidence Threshold".translate())
+                    Spacer()
+                    Text("\(Int(confidenceThreshold * 100))%")
+                        .foregroundColor(.secondary)
                 }
-            )
+                Slider(value: $confidenceThreshold, in: 0.1...0.9, step: 0.05)
+            }
 
-            SettingSliderDouble(
-                title: "Analysis Window Duration".translate(),
-                value: $analysisWindowDuration,
-                range: 0.1...5.0,
-                step: 0.1,
-                minLabel: "0.1s",
-                maxLabel: "5.0s",
-                valueFormatter: { value in // Updated to use the valueFormatter closure
-                    String(format: "%.1f s", value)
+            // Analysis Window Duration
+            VStack {
+                HStack {
+                    Text("Analysis Window Duration".translate())
+                    Spacer()
+                    Text(String(format: "%.1f s", analysisWindowDuration))
+                        .foregroundColor(.secondary)
                 }
-            )
+                Slider(value: $analysisWindowDuration, in: 0.1...5.0, step: 0.1)
+            }
 
-            SettingSliderDouble(
-                title: "Analysis Overlap Factor".translate(),
-                value: $analysisOverlapFactor,
-                range: 0.0...0.9,
-                step: 0.1,
-                minLabel: "0%",
-                maxLabel: "90%",
-                valueFormatter: { value in // Updated to use the valueFormatter closure
-                    String(format: "%.0f%%", value * 100) // Format as percentage with no decimals
+            // Analysis Overlap Factor
+            VStack {
+                HStack {
+                    Text("Analysis Overlap Factor".translate())
+                    Spacer()
+                    Text("\(Int(analysisOverlapFactor * 100))%")
+                        .foregroundColor(.secondary)
                 }
-            )
+                Slider(value: $analysisOverlapFactor, in: 0.0...0.9, step: 0.1)
+            }
         }
     }
 }

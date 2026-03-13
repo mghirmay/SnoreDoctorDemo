@@ -27,6 +27,12 @@ struct LineChart: View {
                 Text("No data for this line chart.")
                     .foregroundColor(.gray)
             } else {
+                HStack {
+                    Text("LineChart ")
+                        .font(.headline)
+                    HelpPopoverButton(info: HelpDataFactory.generalTrendChart)
+                }.padding(.horizontal)
+                
                 Chart {
                     ForEach(data.sorted(by: { $0.0 < $1.0 }), id: \.0) { date, value in // Sort by date
                         LineMark(

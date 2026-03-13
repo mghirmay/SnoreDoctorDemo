@@ -13,9 +13,9 @@ import CoreData
 // MARK: - Calendar View (Re-using the previous structure, adjusted for Core Data)
 
 struct CalendarView: View {
+    @EnvironmentObject var soundDataManager: SoundDataManager
     @Binding var selectedDate: Date
     @Binding var currentMonth: Date
-    @ObservedObject var soundDataManager: SoundDataManager // Now an ObservedObject for dynamic updates
 
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {

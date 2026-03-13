@@ -49,26 +49,32 @@ class SoundDataManager: ObservableObject {
      - Parameter identifier: The name of the detected sound event (e.g., "snoring", "speech").
      - Parameter confidence: The confidence score of the detection (0.0 to 1.0).
      - Parameter session: The RecordingSession object this event belongs to.
-     - Parameter duration: The duration of the detected event in seconds (optional).
-     - Parameter operations: The timeStape of the detected event in seconds (optional).
      */
-    func saveSoundEvent(identifier: String, confidence: Double, session: RecordingSession, duration: Double? = nil, timeStamp : Date) -> SoundEvent {
-        // Perform Core Data operations on the context's queue for thread safety
-        // This function will block until the `perform` block is executed and the new SoundEvent is created.
-        // If you need truly asynchronous behavior and don't want to block, you'd need a completion handler.
+    func saveSoundEvent(identifier: String, confidence: Double, session: RecordingSession, isSnoreRelated: Bool) -> SoundEvent {
         var newSoundEvent: SoundEvent!
+  
 
-        managedObjectContext.performAndWait { // Use performAndWait to get the result synchronously
+        managedObjectContext.performAndWait {
             let event = SoundEvent(context: self.managedObjectContext)
             event.id = UUID()
             event.name = identifier
             event.confidence = confidence
-            event.timestamp = timeStamp
-            event.session = session // Link to the session!
-            event.audioFileName = session.audioFileName // Use session's audioFileName
-            newSoundEvent = event // Assign the created event to the outer variable
-
-            print("Prepared new sound event: '\(identifier)' (Conf: \(confidence)) for session '\(session.title ?? session.id?.uuidString ?? "N/A")' duration \(duration ?? 0.0)s")
+            event.timestamp = Date()
+            
+            // --- THE FILTER ---
+             if isSnoreRelated {
+                // Only link to the session if it's a snore or related sound
+                event.session = session
+                event.audioFileName = session.audioFileName
+                print("💾 Saving Snore-Related: \(identifier)")
+            } else {
+                // If it's NOT a snore, we don't link it.
+                // It stays in RAM (temporary) so the aggregator can see it,
+                // but it won't be saved to the database.
+                print("☁️ Processing Temporary Sound: \(identifier)")
+            }
+            
+            newSoundEvent = event
         }
 
         return newSoundEvent
@@ -115,21 +121,19 @@ class SoundDataManager: ObservableObject {
         let calendar = Calendar.current
         let startOfDisplayDay = calendar.startOfDay(for: displayDate)
         
-        // We want to find sessions that ENDED on the displayDate.
-        // Usually, if you wake up on Tuesday, that is your "Tuesday Sleep Report,"
-        // even if you went to bed on Monday.
-        guard let endOfDisplayDay = calendar.date(byAdding: .day, value: 1, to: startOfDisplayDay) else {
+        // Get the start of the NEXT day
+        guard let startOfNextDay = calendar.date(byAdding: .day, value: 1, to: startOfDisplayDay) else {
             return []
         }
 
         let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
         
-        // Filter: Sessions that end between 00:00 and 23:59 of the selected date
-        // This naturally captures the "Night Sleep" and any "Day Naps" on that specific day.
+        // NEW Predicate: Find all sessions that started ON the selected date
+        // regardless of when they ended.
         fetchRequest.predicate = NSPredicate(
-            format: "endTime >= %@ AND endTime < %@",
+            format: "startTime >= %@ AND startTime < %@",
             startOfDisplayDay as NSDate,
-            endOfDisplayDay as NSDate
+            startOfNextDay as NSDate
         )
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \RecordingSession.startTime, ascending: true)]
@@ -137,6 +141,7 @@ class SoundDataManager: ObservableObject {
         do {
             return try managedObjectContext.fetch(fetchRequest)
         } catch {
+            print("Fetch error: \(error)")
             return []
         }
     }
@@ -182,6 +187,38 @@ class SoundDataManager: ObservableObject {
            }
        }
   
+    
+    
+    func reconcileIncompleteSessions(in context: NSManagedObjectContext) {
+        let request: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
+        // Target sessions that have no endTime
+        request.predicate = NSPredicate(format: "endTime == nil")
+        
+        do {
+            let sessions = try context.fetch(request)
+            for session in sessions {
+                let eventRequest: NSFetchRequest<SnoreEvent> = SnoreEvent.fetchRequest()
+                eventRequest.predicate = NSPredicate(format: "session == %@", session)
+                eventRequest.sortDescriptors = [NSSortDescriptor(keyPath: \SnoreEvent.startTime, ascending: false)]
+                eventRequest.fetchLimit = 1
+                
+                if let latestEvent = try context.fetch(eventRequest).first,
+                   let lastTime = latestEvent.startTime {
+                    session.endTime = lastTime
+                    session.lastUpdate = lastTime
+                    
+                } else {
+                    // Fallback: If no events exist, set end time to 1 minute after start
+                    // or flag it as an incomplete session
+                    session.endTime = session.startTime?.addingTimeInterval(60)
+                    print("Patched empty session \(session.objectID) with default duration.")
+                }
+            }
+            try context.save()
+        } catch {
+            print("Reconciliation failed: \(error)")
+        }
+    }
 
 
 }

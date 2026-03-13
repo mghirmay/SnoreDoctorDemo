@@ -31,21 +31,20 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
     @IBOutlet weak var sessionsTableView: UITableView!
 
-    private var currentRecordingSession: RecordingSession? // Manages Core Data session object
+  
+    // Shared instance of your Data Manager
+    let soundDataManager = SoundDataManager()
+    let persistenceController = PersistenceController.shared
     
     // 🔥 NEW: Combine subscription to monitor the SoundRecognitionManager's output
     private var analysisSubscription: AnyCancellable?
-    // The following properties were removed as they are now managed by SoundRecognitionManager.shared:
-    // private var audioEngine: AVAudioEngine?
-    // private var audioStreamAnalyzer: SNAudioStreamAnalyzer?
-    // private let analysisQueue = DispatchQueue(...)
-    // private var soundClassifierRequest: SNClassifySoundRequest?
-    private lazy var resultsObserver = SoundEventDetectionObserver(delegate: self)
+    private lazy var resultsObserver = SoundEventDetectionObserver(delegate: self, soundDataManager : soundDataManager)
 
     // Instances of your managers
-    private let audioRecorder = AudioRecorder()
-    private let audioManager = AudioManager.shared // Use the singleton AudioManager
+    private let audioRecorderManager = AudioRecorderManager.shared
+    private let audioEngineManager = AudioEngineManager.shared // Use the singleton AudioManager
 
+    
     // NSFetchedResultsController for RecordingSessions
     private lazy var fetchedResultsController: NSFetchedResultsController<RecordingSession> = {
         let fetchRequest: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
@@ -54,7 +53,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
         let controller = NSFetchedResultsController(
             fetchRequest: fetchRequest,
-            managedObjectContext: PersistenceController.shared.container.viewContext,
+            managedObjectContext: persistenceController.container.viewContext,
             sectionNameKeyPath: nil,
             cacheName: nil
         )
@@ -73,12 +72,12 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         super.viewDidLoad()
 
         setupUI()
-        // setupAudioAnalysisComponents is no longer needed
-        setupFetchedResultsController()
-        setupNotificationObservers()
+       setupNotificationObservers()
 
         // Request microphone permission on launch
         requestMicrophonePermission()
+        AudioEngineManager.shared.setup()
+   
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -86,8 +85,17 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         // No redundant permission checks here; viewDidLoad handles initial request.
         // Keep the screen awake while the user is monitoring their snoring
         UIApplication.shared.isIdleTimerDisabled = true
+       
     }
-
+    override func viewIsAppearing(_ animated: Bool) {
+        super.viewIsAppearing(animated)
+        // The view is now in the hierarchy, safe to layout!
+        // Only fetch if we haven't already or if we need to refresh
+        if fetchedResultsController.fetchedObjects == nil {
+            setupFetchedResultsController()
+        }
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         // Give control back to the system when they leave the screen
@@ -121,7 +129,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
     // setupAudioAnalysisComponents is removed as logic is now in SoundRecognitionManager
     
-
+    @objc private func handleDataCleared() {
+        setupFetchedResultsController()
+    }
+    
     private func setupFetchedResultsController() {
         do {
             try fetchedResultsController.performFetch()
@@ -133,6 +144,16 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     private func setupNotificationObservers() {
+        
+        NotificationCenter.default.addObserver(
+            forName: .dataDidClear,
+            object: nil,
+            queue: .main // Ensures the UI update happens on the main thread
+        ) { [weak self] _ in
+            // Inline implementation of the refresh logic
+            self?.setupFetchedResultsController()
+        }
+        
         // 🔥 REMOVED: Audio session interruption and media services reset notifications
         // are now handled internally by SoundRecognitionManager, which will send a
         // .failure signal via Combine.
@@ -143,6 +164,8 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
                                                 selector: #selector(handleMediaServicesReset),
                                                 name: .mediaServicesReset,
                                                 object: nil)
+        
+       
     }
 
     // MARK: - Microphone Permission
@@ -193,7 +216,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             startAudioAnalysis()
         }
     }
-
+    
     private func startAudioAnalysis() {
         guard analysisButton?.isEnabled == true else {
             updateResultsTextView(with: "Microphone permission not granted or analysis disabled.\n")
@@ -206,107 +229,69 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
 
         updateResultsTextView(with: "Starting audio analysis... \n", append: false)
 
-        do {
-            // 1. Start file recording (AudioRecorder still handles this)
-            guard let initialRecordingURL = try audioRecorder.startAndGetRecordingURL() else {
-                throw AudioAnalysisError.invalidState("Failed to obtain initial recording URL from AudioRecorder.")
-            }
-
-            // 2. Create a new Core Data RecordingSession
-            let context = PersistenceController.shared.container.viewContext
-            let newSession = RecordingSession(context: context)
-            newSession.id = UUID()
-            newSession.startTime = Date()
-            newSession.notes = nil
-            newSession.audioFileName = initialRecordingURL.lastPathComponent
-
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "EEEE, MMM d, h:mm a"
-            newSession.title = dateFormatter.string(from: newSession.startTime ?? Date())
-
-            self.currentRecordingSession = newSession
-            resultsObserver.currentRecordingSession = newSession // Pass to the observer
-
-           
-            print("Recording session started for file: \(newSession.audioFileName ?? "undefined filename")")
-
-            // 3. Start the sound recognition service and listen for results
-            setupAnalysisSubscription()
-           
-
-             // 4. Start the Engine using the Manager
-            Task { @MainActor in // ✅ EXECUTE ON MAIN THREAD
-                do {
-                    // Disable interaction while the async start process is happening
-                    analysisButton?.isEnabled = false
-                    if UserDefaults.standard.useCustomLLModel {
-                        try await
-                            SoundRecognitionManager.shared.startRecognition_with_custom_model(
-                            observer: resultsObserver,
-                            windowDuration: UserDefaults.standard.analysisWindowDuration,
-                            overlapFactor: UserDefaults.standard.analysisOverlapFactor
-                        )
-                    }else{
-                        try await SoundRecognitionManager.shared.startRecognition_with_apple_version1_model(
-                            observer: resultsObserver,
-                            windowDuration: UserDefaults.standard.analysisWindowDuration,
-                            overlapFactor: UserDefaults.standard.analysisOverlapFactor
-                        )
-                    }
-                    // ✅ SUCCESS
-                    updateResultsTextView(with: "Analysis started.\n")
-                    updateAnalysisButtonState(isRecording: true)
-                    
-                } catch {
-                    // ✅ FAILURE & RESET
-                    updateResultsTextView(with: "❌ Failed to start: \(error.localizedDescription)\n")
-                    
-                    // Important: Reset the UI state if start fails
-                    updateAnalysisButtonState(isRecording: false)
-                    
-                    // Force a cleanup (just in case partial setup occurred)
-                    SoundRecognitionManager.shared.stopRecognition()
-                }
+        
+        Task { @MainActor in
+            do {
+        
+                let context = persistenceController.container.viewContext
                 
-                // Re-enable button after attempt finishes (success or fail)
-                analysisButton?.isEnabled = true
-            }
-           
+                   
+                   
+                // Simply tell the observer to start the session internally
+                resultsObserver.startNewSession(context: context)
+               
 
-        } catch let error as AudioAnalysisError {
-            print("Audio analysis setup failed: \(error.localizedDescription)")
-            updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-            stopAudioAnalysis() // Ensure clean shutdown on error
-            showAlert(title: "Analysis Setup Error", message: error.localizedDescription)
-        } catch {
-            print("Audio analysis setup failed with generic error: \(error.localizedDescription)")
-            updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-            stopAudioAnalysis() // Ensure clean shutdown on error
-            showAlert(title: "Analysis Setup Error", message: "An unexpected error occurred: \(error.localizedDescription)")
+                // 5. Start sound recognition
+                setupAnalysisSubscription()
+                analysisButton?.isEnabled = false
+                if UserDefaults.standard.useCustomLLModel {
+                    try await SoundRecognitionManager.shared.startRecognition_with_custom_model(
+                        observer: resultsObserver,
+                        windowDuration: UserDefaults.standard.analysisWindowDuration,
+                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                    )
+                } else {
+                    try await SoundRecognitionManager.shared.startRecognition_with_apple_version1_model(
+                        observer: resultsObserver,
+                        windowDuration: UserDefaults.standard.analysisWindowDuration,
+                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                    )
+                }
+
+                updateResultsTextView(with: "Analysis started.\n")
+                updateAnalysisButtonState(isRecording: true)
+                analysisButton?.isEnabled = true
+
+            } catch let error as AudioAnalysisError {
+                print("Audio analysis setup failed: \(error.localizedDescription)")
+                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
+                stopAudioAnalysis()
+                showAlert(title: "Analysis Setup Error", message: error.localizedDescription)
+            } catch {
+                print("Unexpected error: \(error.localizedDescription)")
+                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
+                stopAudioAnalysis()
+                showAlert(title: "Analysis Setup Error", message: "An unexpected error occurred: \(error.localizedDescription)")
+            }
         }
     }
 
     private func stopAudioAnalysis() {
+        
         // 1. Stop recognition in the singleton
         SoundRecognitionManager.shared.stopRecognition()
-
+        
+     
         // 2. Cancel the Combine subscription
         analysisSubscription?.cancel()
         analysisSubscription = nil
-
-        // 3. Stop the file recording
-        _ = audioRecorder.stopAndGetRecordingURL()
         
-        // 4. Update Core Data session end time and save
-        if let session = self.currentRecordingSession {
-            session.endTime = Date() // Set the end time for the session
-            resultsObserver.updateSessionCountsAndSave() // Ensure counts are saved
-            PersistenceController.shared.save() // Save the updated session
-            resultsObserver.currentRecordingSession = nil // Clear session from observer
-        }
         
-        self.currentRecordingSession = nil // Clear current session from ViewController
-
+        // 3. Update Core Data session end time and save
+        // The observer handles its own cleanup and saving
+        resultsObserver.finalizeSession()
+        persistenceController.save() // Save the updated session
+  
         updateResultsTextView(with: "Analysis stopped.\n")
         updateAnalysisButtonState(isRecording: false)
     }
@@ -332,11 +317,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
    
 
     private func handleClassificationResult(_ result: SNClassificationResult) {
-        guard let session = currentRecordingSession else {
-            print("Warning: Received classification result but no active session.")
-            return
-        }
-
+      
         // --- Log Generation (Simplified from old observer logic) ---
         let sortedClassifications = result.classifications.sorted { $0.confidence > $1.confidence }
         
@@ -404,37 +385,40 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     // MARK: - Button Actions (Presenting SwiftUI Views)
-
     @IBAction func showSoundChart(_ sender: UIButton) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
+        let managedObjectContext = persistenceController.container.viewContext
 
-        // 🔥 Check state using the manager's public `isRunning` property
-        let isCurrentSessionRecording = (self.currentRecordingSession != nil && SoundRecognitionManager.shared.isRunning)
-        let currentLiveSessionID = self.currentRecordingSession?.id
+        // 1. Get the session reference from the observer instead of the ViewController
+        let activeSession = resultsObserver.currentRecordingSession
+        let isRecording = (activeSession != nil && SoundRecognitionManager.shared.isRunning)
+        
+        // 2. Use the ID directly from the active session object
+        let currentLiveSessionID = activeSession?.id
 
         let initialChartSessionID: UUID?
-        if isCurrentSessionRecording {
+        if isRecording {
             initialChartSessionID = currentLiveSessionID
         } else {
-            // Optionally, fetch the ID of the most recent past session if no live session
+            // Fallback to the most recent session in the database
             initialChartSessionID = fetchedResultsController.fetchedObjects?.first?.id
         }
 
-        let chartView = SnoreDoctorChartView(
+        // 3. Initialize your SwiftUI view
+        let chartView = SnoreAnalysisReport(
             initialSessionID: initialChartSessionID,
-            isLiveSessionActive: isCurrentSessionRecording,
+            isLiveSessionActive: isRecording,
             currentLiveSessionID: currentLiveSessionID
         )
         .environment(\.managedObjectContext, managedObjectContext)
+        .environmentObject(soundDataManager)
 
         let hostingController = UIHostingController(rootView: chartView)
-        // This tells the hosting controller to let the SwiftUI view
-        // decide how to fill the space, ignoring the UIKit "readable" margins.
         hostingController.view.backgroundColor = .systemBackground
-        
         hostingController.modalPresentationStyle = .fullScreen
         self.present(hostingController, animated: true, completion: nil)
     }
+
+   
 
     @IBAction func showPlaybackView(_ sender: UIButton) {
         // TODO: Implement playback view presentation
@@ -442,9 +426,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     @IBAction func showHistogram(_ sender: UIButton) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
+        let managedObjectContext = persistenceController.container.viewContext
         let histogramView = SnoreDoctorEventNameHistogramView()
             .environment(\.managedObjectContext, managedObjectContext)
+            .environmentObject(soundDataManager)
 
         let hostingController = UIHostingController(rootView: histogramView)
         hostingController.modalPresentationStyle = .pageSheet
@@ -452,9 +437,10 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     @IBAction func showSleepReport(_ sender: UIButton) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
-        let sleepReportView = SleepReportView()
+        let managedObjectContext = persistenceController.container.viewContext
+        let sleepReportView = CalenderSleepReport()
             .environment(\.managedObjectContext, managedObjectContext)
+            .environmentObject(soundDataManager)
 
         let hostingController = UIHostingController(rootView: sleepReportView)
         // This tells the hosting controller to let the SwiftUI view
@@ -466,10 +452,13 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
     }
 
     @IBAction func showSettings(_ sender: UIButton) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
+        let managedObjectContext = persistenceController.container.viewContext
+        
+        // 2. Inject both the Context AND the Manager
         let settingsView = SettingsView()
-            .environment(\.managedObjectContext, managedObjectContext)
-
+                .environment(\.managedObjectContext, managedObjectContext)
+                .environmentObject(soundDataManager) 
+        
         let hostingController = UIHostingController(rootView: settingsView)
         // This tells the hosting controller to let the SwiftUI view
         // decide how to fill the space, ignoring the UIKit "readable" margins.
@@ -493,9 +482,9 @@ extension MainViewController: SoundEventDetectionObserverDelegate {
         updateResultsTextView(with: "Error during analysis: \(error.localizedDescription)\n")
         // Since SoundRecognitionManager calls stopRecognition internally upon failure,
         // we just need to update the UI state.
-        self.currentRecordingSession?.endTime = Date() // Mark session as stopped
-        PersistenceController.shared.save()
-        self.currentRecordingSession = nil
+          resultsObserver.finalizeSession()
+         persistenceController.save()
+
         
         updateAnalysisButtonState(isRecording: false)
         showAlert(title: "Analysis Stopped", message: "Analysis stopped due to an error: \(error.localizedDescription)")
@@ -528,52 +517,72 @@ extension MainViewController {
 
 // MARK: - UITableViewDataSource
 
+
 extension MainViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return fetchedResultsController.sections?.count ?? 0
     }
 
+  
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return fetchedResultsController.sections?[section].numberOfObjects ?? 0
+        // Ensure the section index actually exists before accessing it
+        guard let sections = fetchedResultsController.sections, section < sections.count else {
+            return 0
+        }
+        return sections[section].numberOfObjects
     }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
 
+        let session = fetchedResultsController.object(at: indexPath)
+        presentSessionDetails(for: session)
+    }
+    
+    
+    
+    ///TODO:: try to use SessionTableViewCell 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "RecordingSessionCell", for: indexPath)
         let session = fetchedResultsController.object(at: indexPath)
-
         var content = cell.defaultContentConfiguration()
+
+        // 1. Title
         content.text = session.title
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMM d, yyyy, h:mm a"
-
-        var detailText = ""
-        if let startTime = session.startTime, let endTime = session.endTime {
-            detailText = "\(dateFormatter.string(from: startTime)) - \(dateFormatter.string(from: endTime))"
-        } else if let startTime = session.startTime {
-            detailText = "\(dateFormatter.string(from: startTime)) (Ongoing/Unfinished)"
-        } else {
-            detailText = "Invalid Session Time"
+        // 2. Date String
+        var dateString = "Invalid Date"
+        if let start = session.startTime {
+            dateString = AppFormatters.sessionDateFormatter.string(from: start)
         }
 
+        // 3. Duration String
+        var durationString = ""
+        if let start = session.startTime, let end = session.endTime {
+            let interval = end.timeIntervalSince(start)
+            durationString = AppFormatters.durationFormatter.string(from: interval) ?? ""
+        } else if session.startTime != nil {
+            durationString = "Ongoing"
+        }
+
+        // Combine into secondary text
+        content.secondaryText = "\(dateString) • \(durationString)"
+        
+        // Handle notes snippet as before...
         if let notes = session.notes, !notes.isEmpty {
-            let noteSnippet = notes.prefix(50)
-            detailText += "\nNotes: \(noteSnippet)\(notes.count > 50 ? "..." : "")"
-            content.secondaryTextProperties.numberOfLines = 0
+            content.secondaryText! += "\nNotes: \(notes.prefix(50))\(notes.count > 50 ? "..." : "")"
         }
-        content.secondaryText = detailText
 
         cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
-
         return cell
     }
+    
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             let sessionToDelete = fetchedResultsController.object(at: indexPath)
-            PersistenceController.shared.container.viewContext.delete(sessionToDelete)
-            PersistenceController.shared.save()
+            persistenceController.container.viewContext.delete(sessionToDelete)
+            persistenceController.save()
         }
     }
 }
@@ -581,17 +590,13 @@ extension MainViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension MainViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-
-        let session = fetchedResultsController.object(at: indexPath)
-        presentSessionDetails(for: session)
-    }
+   
 
     private func presentSessionDetails(for session: RecordingSession) {
-        let managedObjectContext = PersistenceController.shared.container.viewContext
-        let sessionDetailView = SessionDetailView(session: session)
+        let managedObjectContext = persistenceController.container.viewContext
+        let sessionDetailView = SessionDetailReport(session: session)
             .environment(\.managedObjectContext, managedObjectContext)
+            .environmentObject(soundDataManager)
 
         let hostingController = UIHostingController(rootView: sessionDetailView)
         // This tells the hosting controller to let the SwiftUI view

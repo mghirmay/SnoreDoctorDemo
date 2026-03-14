@@ -6,3 +6,5 @@
   
 */
 NSMicrophoneUsageDescription = "Das Mikrofon wird Erkennung von Schnarchen verwendet. Audioaufnahmen werden nur auf deinem Gerät gespeichert und nicht außerhalb der App verwendet!";
+
+"ImportOptions_Info" = "Merge keeps existing records. Replace removes everything first.";

@@ -5,101 +5,135 @@
 //  Created by musie Ghirmay on 09.07.25.
 //
 
-
 import Foundation
 import CoreData
 
-// MARK: - SnoreEventPostProcessor (Conforming to SnoreEventCreator)
+// MARK: - SnoreEventPostProcessor
 
 class SnoreEventPostProcessor: SnoreEventCreator {
     let managedObjectContext: NSManagedObjectContext
-    
+
     init(context: NSManagedObjectContext) {
         self.managedObjectContext = context
     }
 
+    // MARK: - Main Entry Point
+
+    /// Processes a single session, rebuilding all SnoreEvents from its SoundEvents.
+    /// Call this AFTER reconcileIncompleteSessions so session.endTime is guaranteed to exist.
     func processSessionForSnoreEvents(session: RecordingSession) throws {
-        print("Starting snore event aggregation for session: \(session.id?.uuidString ?? "N/A")")
+        let sessionID = session.id?.uuidString ?? "N/A"
+        print("▶️ Starting SnoreEvent aggregation for session: \(sessionID)")
 
-        try deleteExistingSnoreEvents(for: session)
-
-        let fetchRequest: NSFetchRequest<SoundEvent> = SoundEvent.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "session == %@", session)
-        let sortDescriptor = NSSortDescriptor(key: "timestamp", ascending: true)
-        fetchRequest.sortDescriptors = [sortDescriptor]
-
-        let sortedSoundEvents = try managedObjectContext.fetch(fetchRequest)
-
-        guard !sortedSoundEvents.isEmpty else {
-            print("No sound events found for session \(session.id?.uuidString ?? "N/A"). No SnoreEvents created.")
+        // Guard: endTime must exist (reconcileIncompleteSessions should have patched this already)
+        guard session.endTime != nil else {
+            print("⚠️ Skipping session \(sessionID) — endTime is nil. Run reconcileIncompleteSessions first.")
             return
         }
 
-        var currentSnoreEventsBatch: [SoundEvent] = []
-        var lastSnoreRelatedEventTimestamp: Date?
+        // 1. Wipe existing SnoreEvents for a clean rebuild
+        try deleteExistingSnoreEvents(for: session)
 
-        for (index, soundEvent) in sortedSoundEvents.enumerated() {
-            guard let currentEventTimestamp = soundEvent.timestamp else {
-                print("Skipping SoundEvent with nil timestamp: \(soundEvent.name ?? "N/A")")
+        // 2. Fetch all snore-related SoundEvents for this session, sorted by timestamp
+        let fetchRequest: NSFetchRequest<SoundEvent> = SoundEvent.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "session == %@", session)
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: true)]
+
+        let allSoundEvents = try managedObjectContext.fetch(fetchRequest)
+
+        guard !allSoundEvents.isEmpty else {
+            print("ℹ️ No SoundEvents found for session \(sessionID). Nothing to aggregate.")
+            return
+        }
+
+        // 3. Aggregate into batches and create SnoreEvents
+        let createdCount = try aggregateIntoBatches(allSoundEvents, for: session)
+
+        // 4. Single save at the end — not per-batch
+        if managedObjectContext.hasChanges {
+            try managedObjectContext.save()
+            print("✅ Saved \(createdCount) SnoreEvent(s) for session: \(sessionID)")
+        } else {
+            print("ℹ️ No changes to save for session: \(sessionID)")
+        }
+    }
+
+    // MARK: - Batch Aggregation
+
+    /// Walks through sorted SoundEvents, groups them by gap threshold, and flushes each batch.
+    /// Returns the number of SnoreEvents created.
+    @discardableResult
+    private func aggregateIntoBatches(_ sortedEvents: [SoundEvent], for session: RecordingSession) throws -> Int {
+        let gapThreshold: Double = UserDefaults.standard.postProcessGapThreshold
+        var currentBatch: [SoundEvent] = []
+        var lastSnoreTimestamp: Date? = nil
+        var createdCount = 0
+
+        for soundEvent in sortedEvents {
+            guard let timestamp = soundEvent.timestamp else {
+                print("⚠️ Skipping SoundEvent '\(soundEvent.name ?? "N/A")' — nil timestamp.")
                 continue
             }
 
-            let gapThreshold: Double = UserDefaults.standard.postProcessGapThreshold
             let isSnoreRelated = SoundIdentifiers.snoreRelated.contains(soundEvent.name?.lowercased() ?? "")
 
             if isSnoreRelated {
-                if let lastTimestamp = lastSnoreRelatedEventTimestamp,
-                   currentEventTimestamp.timeIntervalSince(lastTimestamp) > gapThreshold {
-                    if !currentSnoreEventsBatch.isEmpty {
-                        // Use the protocol's default implementation
-                        try createAndSaveSnoreEvent(from: currentSnoreEventsBatch, for: session)
-                        currentSnoreEventsBatch = []
+                // Check if this event is too far from the last one — if so, flush current batch first
+                if let lastTimestamp = lastSnoreTimestamp,
+                   timestamp.timeIntervalSince(lastTimestamp) > gapThreshold {
+                    if !currentBatch.isEmpty {
+                        try createAndSaveSnoreEvent(from: currentBatch, for: session)
+                        createdCount += 1
+                        currentBatch = []
                     }
                 }
-                currentSnoreEventsBatch.append(soundEvent)
-                lastSnoreRelatedEventTimestamp = currentEventTimestamp
+                currentBatch.append(soundEvent)
+                lastSnoreTimestamp = timestamp
+
             } else {
-                if !currentSnoreEventsBatch.isEmpty {
-                    // Use the protocol's default implementation
-                    try createAndSaveSnoreEvent(from: currentSnoreEventsBatch, for: session)
-                    currentSnoreEventsBatch = []
+                // Non-snore event: flush whatever we have
+                if !currentBatch.isEmpty {
+                    try createAndSaveSnoreEvent(from: currentBatch, for: session)
+                    createdCount += 1
+                    currentBatch = []
                 }
-                lastSnoreRelatedEventTimestamp = nil
-            }
-
-            if index == sortedSoundEvents.count - 1 && !currentSnoreEventsBatch.isEmpty {
-                // Use the protocol's default implementation for the very last batch
-                try createAndSaveSnoreEvent(from: currentSnoreEventsBatch, for: session)
+                lastSnoreTimestamp = nil
             }
         }
 
-        if managedObjectContext.hasChanges {
-            try managedObjectContext.save() // Final save for the post-processor
-            print("Context saved after SnoreEvent aggregation for session: \(session.id?.uuidString ?? "N/A")")
-        } else {
-            print("No changes to save for session: \(session.id?.uuidString ?? "N/A")")
+        // ✅ FIX: Flush the final batch AFTER the loop, not inside it
+        // The original code checked `index == count - 1` inside the loop,
+        // which silently dropped the last batch if the final event had a nil timestamp.
+        if !currentBatch.isEmpty {
+            try createAndSaveSnoreEvent(from: currentBatch, for: session)
+            createdCount += 1
         }
 
-        print("Finished snore event aggregation for session: \(session.id?.uuidString ?? "N/A")")
+        return createdCount
     }
+
+    // MARK: - Delete Existing SnoreEvents
 
     private func deleteExistingSnoreEvents(for session: RecordingSession) throws {
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = SnoreEvent.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "session == %@", session)
 
-        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        batchDeleteRequest.resultType = .resultTypeObjectIDs
+        let batchDelete = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        batchDelete.resultType = .resultTypeObjectIDs
 
         do {
-            let result = try managedObjectContext.execute(batchDeleteRequest) as? NSBatchDeleteResult
-            if let objectIDs = result?.result as? [NSManagedObjectID] {
-                NSManagedObjectContext.mergeChanges(fromRemoteContextSave: [NSDeletedObjectsKey: objectIDs], into: [managedObjectContext])
+            let result = try managedObjectContext.execute(batchDelete) as? NSBatchDeleteResult
+            if let deletedIDs = result?.result as? [NSManagedObjectID] {
+                // Merge deletions into the in-memory context so live objects are invalidated
+                NSManagedObjectContext.mergeChanges(
+                    fromRemoteContextSave: [NSDeletedObjectsKey: deletedIDs],
+                    into: [managedObjectContext]
+                )
+                print("🗑️ Deleted \(deletedIDs.count) existing SnoreEvent(s) for session: \(session.id?.uuidString ?? "N/A")")
             }
-            print("Deleted existing SnoreEvents for session: \(session.id?.uuidString ?? "N/A")")
         } catch {
-            print("Error deleting existing SnoreEvents: \(error.localizedDescription)")
+            print("❌ Failed to delete SnoreEvents: \(error.localizedDescription)")
             throw error
         }
     }
 }
-

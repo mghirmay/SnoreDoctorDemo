@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		961CD85F2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 961CD85D2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodeld */; };
 		961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */; };
+		962025072F650669007B3EAE /* ExportImportSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962025062F650669007B3EAE /* ExportImportSection.swift */; };
+		962025912F650C2C007B3EAE /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 962025902F650C2C007B3EAE /* ZIPFoundation */; };
 		9642141D2E1987E30021CCA5 /* DailySleepReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9642141A2E1987E30021CCA5 /* DailySleepReportView.swift */; };
 		9642141E2E1987E30021CCA5 /* AudioEventHistogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */; };
 		9642141F2E1987E30021CCA5 /* CalenderSleepReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9642141B2E1987E30021CCA5 /* CalenderSleepReport.swift */; };
@@ -24,7 +26,7 @@
 		96630FB12E20757B00C80E1B /* DataManagementSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96630FB02E20757B00C80E1B /* DataManagementSection.swift */; };
 		96630FB32E207B5D00C80E1B /* SettingSliderInt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96630FB22E207B5D00C80E1B /* SettingSliderInt.swift */; };
 		966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */; };
-		967A5AF32F60DA6100D9A5C6 /* SnoreEventBarChartViewContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartViewContent.swift */; };
+		967A5AF32F60DA6100D9A5C6 /* SnoreEventBarChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartView.swift */; };
 		967A5AF52F60DAD000D9A5C6 /* SnoreTrendLineChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5AF42F60DAB400D9A5C6 /* SnoreTrendLineChartView.swift */; };
 		967A5AF72F60DAFC00D9A5C6 /* SnoreHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5AF62F60DAF900D9A5C6 /* SnoreHeatmapView.swift */; };
 		967A5AF92F60DE0000D9A5C6 /* TrendPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5AF82F60DE0000D9A5C6 /* TrendPoint.swift */; };
@@ -41,6 +43,13 @@
 		967A5E272F63A4F900D9A5C6 /* AppFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5E252F63A4F900D9A5C6 /* AppFormatters.swift */; };
 		967A5E282F63A4F900D9A5C6 /* AppFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5E252F63A4F900D9A5C6 /* AppFormatters.swift */; };
 		967A5E2A2F63A71E00D9A5C6 /* SessionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5E292F63A71E00D9A5C6 /* SessionTableViewCell.swift */; };
+		967A5EB02F64AD0600D9A5C6 /* EditNotesContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EAF2F64AD0600D9A5C6 /* EditNotesContentView.swift */; };
+		967A5EB22F64ADFE00D9A5C6 /* SessionInfoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB12F64ADFE00D9A5C6 /* SessionInfoCard.swift */; };
+		967A5EB42F64B44200D9A5C6 /* ChartHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB32F64B44200D9A5C6 /* ChartHeader.swift */; };
+		967A5EB62F64D89100D9A5C6 /* StatCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB52F64D89100D9A5C6 /* StatCard.swift */; };
+		967A5EBA2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB92F64ED6700D9A5C6 /* SleepQuality.swift */; };
+		967A5EBB2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB92F64ED6700D9A5C6 /* SleepQuality.swift */; };
+		967A5EBC2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967A5EB92F64ED6700D9A5C6 /* SleepQuality.swift */; };
 		967FD9A12F199A42000B1E50 /* ESC50_Model.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 967FC9F12F199A41000B1E50 /* ESC50_Model.mlpackage */; };
 		968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD7892E11AD68009F5DB2 /* SettingsView.swift */; };
 		968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968CD78D2E11B445009F5DB2 /* AppSettings.swift */; };
@@ -96,6 +105,7 @@
 /* Begin PBXFileReference section */
 		961CD85E2E0EEE9000542668 /* SnoreDoctorDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SnoreDoctorDataModel.xcdatamodel; sourceTree = "<group>"; };
 		961CD8842E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SoundEvent+CoreDataClass.swift"; sourceTree = "<group>"; };
+		962025062F650669007B3EAE /* ExportImportSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportImportSection.swift; sourceTree = "<group>"; };
 		964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEventHistogramView.swift; sourceTree = "<group>"; };
 		9642141A2E1987E30021CCA5 /* DailySleepReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailySleepReportView.swift; sourceTree = "<group>"; };
 		9642141B2E1987E30021CCA5 /* CalenderSleepReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalenderSleepReport.swift; sourceTree = "<group>"; };
@@ -111,7 +121,7 @@
 		96630FB02E20757B00C80E1B /* DataManagementSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementSection.swift; sourceTree = "<group>"; };
 		96630FB22E207B5D00C80E1B /* SettingSliderInt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingSliderInt.swift; sourceTree = "<group>"; };
 		966F70B32E11CFA400331451 /* RecordingSession+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecordingSession+CoreDataClass.swift"; sourceTree = "<group>"; };
-		967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartViewContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreEventBarChartViewContent.swift; sourceTree = "<group>"; };
+		967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreEventBarChartView.swift; sourceTree = "<group>"; };
 		967A5AF42F60DAB400D9A5C6 /* SnoreTrendLineChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreTrendLineChartView.swift; sourceTree = "<group>"; };
 		967A5AF62F60DAF900D9A5C6 /* SnoreHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnoreHeatmapView.swift; sourceTree = "<group>"; };
 		967A5AF82F60DE0000D9A5C6 /* TrendPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendPoint.swift; sourceTree = "<group>"; };
@@ -122,6 +132,11 @@
 		967A5D9D2F63950800D9A5C6 /* View+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extension.swift"; sourceTree = "<group>"; };
 		967A5E252F63A4F900D9A5C6 /* AppFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFormatters.swift; sourceTree = "<group>"; };
 		967A5E292F63A71E00D9A5C6 /* SessionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTableViewCell.swift; sourceTree = "<group>"; };
+		967A5EAF2F64AD0600D9A5C6 /* EditNotesContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditNotesContentView.swift; sourceTree = "<group>"; };
+		967A5EB12F64ADFE00D9A5C6 /* SessionInfoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionInfoCard.swift; sourceTree = "<group>"; };
+		967A5EB32F64B44200D9A5C6 /* ChartHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartHeader.swift; sourceTree = "<group>"; };
+		967A5EB52F64D89100D9A5C6 /* StatCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatCard.swift; sourceTree = "<group>"; };
+		967A5EB92F64ED6700D9A5C6 /* SleepQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepQuality.swift; sourceTree = "<group>"; };
 		967FC9F12F199A41000B1E50 /* ESC50_Model.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = ESC50_Model.mlpackage; sourceTree = "<group>"; };
 		968CD7892E11AD68009F5DB2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		968CD78D2E11B445009F5DB2 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -217,6 +232,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				96DF26032DF725B6003498DA /* MessagePack in Frameworks */,
+				962025912F650C2C007B3EAE /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,10 +264,16 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		9620258F2F650C2C007B3EAE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9642141C2E1987E30021CCA5 /* Report */ = {
 			isa = PBXGroup;
 			children = (
-				96EF9E452F4B155300420506 /* SessionSidebarListView.swift */,
 				9642141B2E1987E30021CCA5 /* CalenderSleepReport.swift */,
 				96DA36432E122736001D8F43 /* SnoreAnalysisReport.swift */,
 				96C8DE7F2E280FA900549E31 /* SessionDetailReport.swift */,
@@ -267,6 +289,14 @@
 				967A5AFA2F60FBE700D9A5C6 /* HelpPopoverButton.swift */,
 			);
 			path = Help;
+			sourceTree = "<group>";
+		};
+		967A5EB72F64EA9400D9A5C6 /* Mathe */ = {
+			isa = PBXGroup;
+			children = (
+				967A5EB92F64ED6700D9A5C6 /* SleepQuality.swift */,
+			);
+			path = Mathe;
 			sourceTree = "<group>";
 		};
 		967D386E2F2B01550032FDEE /* Resources */ = {
@@ -304,6 +334,7 @@
 		968CD7882E11AD60009F5DB2 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				962025062F650669007B3EAE /* ExportImportSection.swift */,
 				965992032F5A36EA00804ADA /* PlaybackSettingsSection.swift */,
 				96630FB22E207B5D00C80E1B /* SettingSliderInt.swift */,
 				96630FAC2E2074D900C80E1B /* SettingSliderDouble.swift */,
@@ -320,6 +351,7 @@
 		96B49EA32DCFDB9200D779F9 = {
 			isa = PBXGroup;
 			children = (
+				967A5EB72F64EA9400D9A5C6 /* Mathe */,
 				967A5AFC2F60FCB400D9A5C6 /* Help */,
 				965992052F5A446000804ADA /* Assets.xcassets */,
 				968F99532F19A9D200C55380 /* LICENSE */,
@@ -341,6 +373,7 @@
 				96B49ECF2DCFDB9300D779F9 /* SnoreDoctorDemoUITests */,
 				96B49EAD2DCFDB9200D779F9 /* Products */,
 				967D386E2F2B01550032FDEE /* Resources */,
+				9620258F2F650C2C007B3EAE /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -357,11 +390,15 @@
 		96DA36682E1231FA001D8F43 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				967A5EB52F64D89100D9A5C6 /* StatCard.swift */,
+				967A5EB32F64B44200D9A5C6 /* ChartHeader.swift */,
+				967A5EB12F64ADFE00D9A5C6 /* SessionInfoCard.swift */,
+				967A5EAF2F64AD0600D9A5C6 /* EditNotesContentView.swift */,
 				967A5E292F63A71E00D9A5C6 /* SessionTableViewCell.swift */,
 				967A5AF82F60DE0000D9A5C6 /* TrendPoint.swift */,
 				967A5AF62F60DAF900D9A5C6 /* SnoreHeatmapView.swift */,
 				967A5AF42F60DAB400D9A5C6 /* SnoreTrendLineChartView.swift */,
-				967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartViewContent.swift */,
+				967A5AF22F60DA6100D9A5C6 /* SnoreEventBarChartView.swift */,
 				969D3DC22EA2DC2C007767DA /* SnoreEventListView.swift */,
 				96DDD8D42E259D9C0076F298 /* BoxPlotChart.swift */,
 				96DDD8D22E259D8D0076F298 /* LineChart.swift */,
@@ -377,6 +414,7 @@
 				964214282E1988E70021CCA5 /* CalendarView.swift */,
 				96EF9E432F4B138F00420506 /* SummaryCard.swift */,
 				964214192E1987E30021CCA5 /* AudioEventHistogramView.swift */,
+				96EF9E452F4B155300420506 /* SessionSidebarListView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -418,6 +456,7 @@
 			name = SnoreDoctorDemo;
 			packageProductDependencies = (
 				96DF26022DF725B6003498DA /* MessagePack */,
+				962025902F650C2C007B3EAE /* ZIPFoundation */,
 			);
 			productName = SnoreDoctorDemo;
 			productReference = 96B49EAC2DCFDB9200D779F9 /* SnoreDoctorDemo.app */;
@@ -506,6 +545,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				96DF26012DF725B6003498DA /* XCRemoteSwiftPackageReference "MessagePack.swift" */,
+				962025082F6509F7007B3EAE /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 96B49EAD2DCFDB9200D779F9 /* Products */;
@@ -554,11 +594,14 @@
 				967A5AF52F60DAD000D9A5C6 /* SnoreTrendLineChartView.swift in Sources */,
 				967A5AFB2F60FBE700D9A5C6 /* HelpPopoverButton.swift in Sources */,
 				967A5B002F60FCDB00D9A5C6 /* HelpDataFactory.swift in Sources */,
+				967A5EBA2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */,
 				967A5AF92F60DE0000D9A5C6 /* TrendPoint.swift in Sources */,
 				966F70BA2E11CFA400331451 /* RecordingSession+CoreDataClass.swift in Sources */,
+				967A5EB22F64ADFE00D9A5C6 /* SessionInfoCard.swift in Sources */,
 				96DA36702E123489001D8F43 /* SoundEventType.swift in Sources */,
 				968F989C2F19A48500C55380 /* MySoundClassifier1.mlpackage in Sources */,
 				96630FA72E20706E00C80E1B /* SnoreEvent+CoreDataClass.swift in Sources */,
+				967A5EB42F64B44200D9A5C6 /* ChartHeader.swift in Sources */,
 				96DA366C2E12325B001D8F43 /* ChartColorProvider.swift in Sources */,
 				96DA36802E125487001D8F43 /* SnoreDoctorEventNameHistogramView.swift in Sources */,
 				9642141D2E1987E30021CCA5 /* DailySleepReportView.swift in Sources */,
@@ -570,6 +613,7 @@
 				96630FB32E207B5D00C80E1B /* SettingSliderInt.swift in Sources */,
 				96DDD8CB2E259D1D0076F298 /* ChartType.swift in Sources */,
 				96DDD8D12E259D7E0076F298 /* BarChart.swift in Sources */,
+				962025072F650669007B3EAE /* ExportImportSection.swift in Sources */,
 				96F681D62E2D94FD00841E70 /* AudioRecorderManager.swift in Sources */,
 				96DDD8CD2E259D350076F298 /* SnoreEventChartContent.swift in Sources */,
 				96C8DE802E280FA900549E31 /* SessionDetailReport.swift in Sources */,
@@ -577,6 +621,7 @@
 				965992042F5A36EA00804ADA /* PlaybackSettingsSection.swift in Sources */,
 				961CD8862E0F5A6A00542668 /* SoundEvent+CoreDataClass.swift in Sources */,
 				F5C5C7B42E1729EF00D8B49A /* String+Extensions.swift in Sources */,
+				967A5EB02F64AD0600D9A5C6 /* EditNotesContentView.swift in Sources */,
 				96F682062E2D980B00841E70 /* AudioPlaybackViewModel.swift in Sources */,
 				967A5AF72F60DAFC00D9A5C6 /* SnoreHeatmapView.swift in Sources */,
 				96EF9E442F4B138F00420506 /* SummaryCard.swift in Sources */,
@@ -593,11 +638,12 @@
 				96DDD8D52E259D9C0076F298 /* BoxPlotChart.swift in Sources */,
 				964214212E19882F0021CCA5 /* Date+Extensions.swift in Sources */,
 				968CD78A2E11B145009F5DB2 /* SettingsView.swift in Sources */,
+				967A5EB62F64D89100D9A5C6 /* StatCard.swift in Sources */,
 				967FD9A12F199A42000B1E50 /* ESC50_Model.mlpackage in Sources */,
 				96DA36672E122F70001D8F43 /* SoundEvent+Extensions.swift in Sources */,
 				96DDD8CF2E259D710076F298 /* ScatterChart.swift in Sources */,
 				96A24B092ECD3AF40072C1B9 /* SoundRecognitionManager.swift in Sources */,
-				967A5AF32F60DA6100D9A5C6 /* SnoreEventBarChartViewContent.swift in Sources */,
+				967A5AF32F60DA6100D9A5C6 /* SnoreEventBarChartView.swift in Sources */,
 				96EF9E462F4B155300420506 /* SessionSidebarListView.swift in Sources */,
 				96630FAD2E2074D900C80E1B /* SettingSliderDouble.swift in Sources */,
 				968CD78E2E11B445009F5DB2 /* AppSettings.swift in Sources */,
@@ -611,6 +657,7 @@
 				967A5D9F2F63951000D9A5C6 /* View+Extension.swift in Sources */,
 				967A5C922F632FCA00D9A5C6 /* FileManager+Extension.swift in Sources */,
 				967A5E262F63A4F900D9A5C6 /* AppFormatters.swift in Sources */,
+				967A5EBC2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -621,6 +668,7 @@
 				967A5C932F632FCA00D9A5C6 /* FileManager+Extension.swift in Sources */,
 				967A5E282F63A4F900D9A5C6 /* AppFormatters.swift in Sources */,
 				967A5DA02F63951000D9A5C6 /* View+Extension.swift in Sources */,
+				967A5EBB2F64ED6700D9A5C6 /* SleepQuality.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -660,7 +708,7 @@
 				CODE_SIGN_ENTITLEMENTS = SnoreDoctorDemo/SnoreDoctorDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZZYE6PCN4J;
+				DEVELOPMENT_TEAM = REN224BC53;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoctor;
@@ -697,7 +745,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZZYE6PCN4J;
+				DEVELOPMENT_TEAM = REN224BC53;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnoreDoctorDemo/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnoreDoctor;
@@ -963,6 +1011,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		962025082F6509F7007B3EAE /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.20;
+			};
+		};
 		96DF26012DF725B6003498DA /* XCRemoteSwiftPackageReference "MessagePack.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/a2/MessagePack.swift.git";
@@ -974,6 +1030,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		962025902F650C2C007B3EAE /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 962025082F6509F7007B3EAE /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
 		96DF26022DF725B6003498DA /* MessagePack */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 96DF26012DF725B6003498DA /* XCRemoteSwiftPackageReference "MessagePack.swift" */;

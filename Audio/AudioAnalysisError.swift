@@ -11,6 +11,7 @@
 import Foundation
 
 
+
 enum AudioAnalysisError: Error, LocalizedError {
     case noActiveSession
     case audioSessionSetupFailed(Error)
@@ -20,6 +21,8 @@ enum AudioAnalysisError: Error, LocalizedError {
     case invalidState(String)
     case unexpected(Error)
     case audioInputUnavailable(Error)
+    case modelNotFound(name: String)
+    case sessionURLUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -41,7 +44,12 @@ enum AudioAnalysisError: Error, LocalizedError {
         case .audioInputUnavailable(let error):
             return "An audioInput Unavailable error occurred: \(error.localizedDescription)"
       
-
+        case .modelNotFound(let name):
+            return "CoreML model '\(name).mlmodelc' was not found in the app bundle."
+        case .sessionURLUnavailable:
+                   return "Could not create a recording file. Check available storage."
+              
+        
         }
     }
 }

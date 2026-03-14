@@ -5,6 +5,8 @@
 //  Created by musie Ghirmay on 22.02.26.
 //  Copyright © 2026 SinitPower.de. All rights reserved.
 //
+
+
 import Foundation
 import SwiftUI
 import Charts // Requires iOS 16+

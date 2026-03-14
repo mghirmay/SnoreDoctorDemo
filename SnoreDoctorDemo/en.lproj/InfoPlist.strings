@@ -6,3 +6,4 @@
   
 */
 NSMicrophoneUsageDescription = "The microphone is used to detect snoring. Audio recordings are only saved on your device and are not used outside the app!";
+

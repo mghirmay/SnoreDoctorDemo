@@ -7,14 +7,21 @@
 
 import SwiftUI
 import CoreData
+//
+//  SnoreDoctorChartView.swift
+//  SnoreDoctorDemo
+//
+
+import SwiftUI
+import CoreData
+
+
 
 struct SnoreAnalysisReport: View {
     @EnvironmentObject var soundDataManager: SoundDataManager
     @Environment(\.managedObjectContext) private var viewContext
-    @Environment(\.dismiss) var dismiss // Add this line
+    @Environment(\.dismiss) var dismiss
 
-
-    @State private var isFixing = false
     @State private var selectedSessionID: UUID?
     @State private var selectedRecordingSession: RecordingSession?
 
@@ -28,27 +35,31 @@ struct SnoreAnalysisReport: View {
         animation: .default
     ) var allRecordingSessions: FetchedResults<RecordingSession>
 
-    @FetchRequest var soundEvents: FetchedResults<SoundEvent>
-    @FetchRequest var snoreEvents: FetchedResults<SnoreEvent>
-
+  
     init(initialSessionID: UUID?, isLiveSessionActive: Bool, currentLiveSessionID: UUID?) {
         _selectedSessionID = State(initialValue: initialSessionID)
         self.isLiveSessionActive = isLiveSessionActive
         self.currentLiveSessionID = currentLiveSessionID
+    }
 
+    // MARK: - Data
 
-        // Initialize with no data until a session is selected
-        _soundEvents = FetchRequest<SoundEvent>(
-            sortDescriptors: [NSSortDescriptor(keyPath: \SoundEvent.timestamp, ascending: true)],
-            predicate: NSPredicate(value: false),
-            animation: .default
-        )
+    /// The currently selected session, resolved from selectedSessionID.
+    private var selectedSession: RecordingSession? {
+        guard let id = selectedSessionID else { return nil }
+        return soundDataManager.fetchRecordingSession(id: id)
+    }
 
-        _snoreEvents = FetchRequest<SnoreEvent>(
-            sortDescriptors: [NSSortDescriptor(keyPath: \SnoreEvent.startTime, ascending: true)],
-            predicate: NSPredicate(value: false),
-            animation: .default
-        )
+    /// All SoundEvents for the selected session, sorted by timestamp.
+    private var soundEvents: [SoundEvent] {
+        guard let session = selectedSession else { return [] }
+        return soundDataManager.fetchSoundEvents(for: session)
+    }
+
+    /// All SnoreEvents for the selected session, sorted by startTime.
+    private var snoreEvents: [SnoreEvent] {
+        guard let session = selectedSession else { return [] }
+        return soundDataManager.fetchSnoreEvents(for: session)
     }
 
     static let sessionDateFormatter: DateFormatter = {
@@ -58,92 +69,43 @@ struct SnoreAnalysisReport: View {
         return formatter
     }()
 
+    private static let detailDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     var body: some View {
         NavigationView {
-            VStack {
-                HStack { // Use HStack to place picker and button side-by-side
-                    Picker("Select Session", selection: $selectedSessionID) {
-                        if isLiveSessionActive {
-                            Text("Live View").tag(nil as UUID?)
-                        } else {
-                            Text("Live View (Inactive)").tag(nil as UUID?).disabled(true)
-                        }
+            VStack(spacing: 0) {
 
-                        ForEach(allRecordingSessions) { session in
-                            if let id = session.id, let startTime = session.startTime {
-                                Text(session.title ?? SnoreAnalysisReport.sessionDateFormatter.string(from: startTime))
-                                    .tag(id as UUID?)
-                            }
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    // No padding here, let the HStack manage it
-                    .onChange(of: selectedSessionID) { _, newID in
-                        updateSoundEventsAndSnoreEventsPredicates(for: newID)
-                        updateSelectedRecordingSession(for: newID)
-                    }
-
-                    Button("Process Now") {
-                        if let session = selectedRecordingSession {
-                            // Call DataManager to aggregate snore events
-                            // DataManager will use SnoreEventPostProcessor internally
-                            soundDataManager.aggregateSnoreEvents(for: session)
-                            // After processing, the FetchRequests for snoreEvents will automatically update
-                            // because Core Data changes are observed by FetchedResults.
-                            print("Triggered 'Process Now' for session: \(session.title ?? "N/A")")
-                        } else {
-                            print("No session selected to process.")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent) // Use a prominent style for clarity
-                    .disabled(selectedRecordingSession == nil) // Disable if no session is selected
-                    
-                 
-                    Button(action: {
-                        isFixing = true
-                        // Move to background to keep UI snappy
-                        DispatchQueue.global(qos: .userInitiated).async {
-                            soundDataManager.reconcileIncompleteSessions(in: viewContext)
-                            
-                            DispatchQueue.main.async {
-                                isFixing = false
-                                // Optional: trigger a haptic feedback or local notification here
-                            }
-                        }
-                    }) {
-                        if isFixing {
-                            ProgressView()
-                        } else {
-                            Label("Fix Data", systemImage: "arrow.clockwise.icloud")
-                        }
-                    }
+                // MARK: - Session Info Card
+                if let session = selectedRecordingSession {
+                    SessionInfoCard(session: session, dateFormatter: Self.detailDateFormatter)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
                 }
-                .padding(.horizontal) // Apply padding to the entire HStack
-                .padding(.top, 5)
 
-                VStack {
-                    // MARK: - Chart Section
-                    SnoreEventChartContent(snoreEvents: snoreEvents)
+                // MARK: - Chart Section
+                SnoreEventChartContent(snoreEvents: snoreEvents)
 
-                    // MARK: - Event List Section
-                    if soundEvents.isEmpty {
-                        ContentUnavailableView(
-                            "No Sound Events",
-                            systemImage: "waveform",
-                            description: Text("Start an analysis session or select a recorded session.")
-                        )
-                        .frame(minHeight: 400)
-                    } else {
-                        SnoreEventListView(
-                            session: selectedRecordingSession,
-                            playbackDelegate: playbackViewModel
-                        )
-                        .frame(minHeight: 600, maxHeight: .infinity)
-                    }
-                
+                // MARK: - Event List Section
+                if soundEvents.isEmpty {
+                    ContentUnavailableView(
+                        "No Sound Events",
+                        systemImage: "waveform",
+                        description: Text("Start an analysis session or select a recorded session.")
+                    )
+                    .frame(minHeight: 400)
+                } else {
+                    SnoreEventListView(
+                        session: selectedRecordingSession,
+                        playbackDelegate: playbackViewModel
+                    )
+                    .frame(minHeight: 600, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Session Chart")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -152,33 +114,34 @@ struct SnoreAnalysisReport: View {
                         dismiss()
                     }
                 }
+                ToolbarItem(placement: .principal) {
+                    Picker("Select Session", selection: $selectedSessionID) {
+                        if isLiveSessionActive {
+                            Text("Live View").tag(nil as UUID?)
+                        } else {
+                            Text("Live View (Inactive)").tag(nil as UUID?).disabled(true)
+                        }
+                        ForEach(allRecordingSessions) { session in
+                            if let id = session.id, let startTime = session.startTime {
+                                Text(session.title ?? SnoreAnalysisReport.sessionDateFormatter.string(from: startTime))
+                                    .tag(id as UUID?)
+                            }
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: selectedSessionID) { _, newID in
+                         updateSelectedRecordingSession(for: newID)
+                    }
+                }
             }
         }
         .onAppear {
-            // Initial predicate update when the view appears
-            updateSoundEventsAndSnoreEventsPredicates(for: selectedSessionID)
             updateSelectedRecordingSession(for: selectedSessionID)
         }
         .onDisappear {
             playbackViewModel.stop()
-        }.navigationViewStyle(.stack)
-    }
-
-    // MARK: - Predicate Updater
-    // Combined predicate update for both SoundEvents and SnoreEvents
-    private func updateSoundEventsAndSnoreEventsPredicates(for id: UUID?) {
-        var predicate: NSPredicate = NSPredicate(value: false) // Default to no results
-
-        if let actualID = id {
-            predicate = NSPredicate(format: "session.id == %@", actualID as CVarArg)
-        } else if isLiveSessionActive, let liveID = currentLiveSessionID {
-            // If "Live View" is selected and active, use the current live session's ID
-            predicate = NSPredicate(format: "session.id == %@", liveID as CVarArg)
         }
-
-        // Assign the predicate to both FetchRequests
-        _soundEvents.wrappedValue.nsPredicate = predicate
-        _snoreEvents.wrappedValue.nsPredicate = predicate
+        .navigationViewStyle(.stack)
     }
 
     // MARK: - Selected Session Updater
@@ -188,35 +151,28 @@ struct SnoreAnalysisReport: View {
         if let actualID = id {
             sessionToSelect = allRecordingSessions.first(where: { $0.id == actualID })
         } else if isLiveSessionActive, let liveID = currentLiveSessionID {
-            // If "Live View" is selected and active, use the current live session's ID
             sessionToSelect = allRecordingSessions.first(where: { $0.id == liveID })
         }
 
         selectedRecordingSession = sessionToSelect
-        
-      
-        // Load audio file if available
-        if let session = selectedRecordingSession,
-               let fileName = session.audioFileName, !fileName.isEmpty {
-                
-                do {
-                    // 1. Get the base folder
-                    let recordingsFolder = try FileManager.getRecordingsFolderURL()
-                    
-                    // 2. Append the filename stored in the database
-                    let audioURL = recordingsFolder.appendingPathComponent(fileName)
 
-                    // 3. Verify and play
-                    if FileManager.default.fileExists(atPath: audioURL.path) {
-                        playbackViewModel.setupAudioPlayer(url: audioURL)
-                    } else {
-                        print("File defined in DB but not found on disk: \(fileName)")
-                    }
-                } catch {
-                    print("Could not resolve recordings directory: \(error)")
+        if let session = selectedRecordingSession,
+           let fileName = session.audioFileName, !fileName.isEmpty {
+            do {
+                let recordingsFolder = try FileManager.getRecordingsFolderURL()
+                let audioURL = recordingsFolder.appendingPathComponent(fileName)
+                if FileManager.default.fileExists(atPath: audioURL.path) {
+                    playbackViewModel.setupAudioPlayer(url: audioURL)
+                } else {
+                    print("File defined in DB but not found on disk: \(fileName)")
                 }
+            } catch {
+                print("Could not resolve recordings directory: \(error)")
+            }
         } else {
             playbackViewModel.stop()
         }
     }
 }
+
+

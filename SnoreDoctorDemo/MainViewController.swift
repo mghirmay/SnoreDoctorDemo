@@ -223,55 +223,48 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
             return
         }
         guard !SoundRecognitionManager.shared.isRunning else {
-            updateResultsTextView(with: "Audio analysis is already running. \n")
+            updateResultsTextView(with: "Audio analysis is already running.\n")
             return
         }
 
-        updateResultsTextView(with: "Starting audio analysis... \n", append: false)
+        updateResultsTextView(with: "Starting audio analysis...\n", append: false)
 
-        
+        // Disable immediately to block double-taps during async setup.
+        analysisButton?.isEnabled = false
+
         Task { @MainActor in
             do {
-        
-                let context = persistenceController.container.viewContext
-                
-                   
-                   
-                // Simply tell the observer to start the session internally
-                resultsObserver.startNewSession(context: context)
-               
-
-                // 5. Start sound recognition
                 setupAnalysisSubscription()
-                analysisButton?.isEnabled = false
-                if UserDefaults.standard.useCustomLLModel {
-                    try await SoundRecognitionManager.shared.startRecognition_with_custom_model(
-                        observer: resultsObserver,
-                        windowDuration: UserDefaults.standard.analysisWindowDuration,
-                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
-                    )
-                } else {
-                    try await SoundRecognitionManager.shared.startRecognition_with_apple_version1_model(
-                        observer: resultsObserver,
-                        windowDuration: UserDefaults.standard.analysisWindowDuration,
-                        overlapFactor: UserDefaults.standard.analysisOverlapFactor
-                    )
-                }
 
+                let modelSource: ModelSource = UserDefaults.standard.useCustomLLModel
+                    ? .custom(modelName: "MySoundClassifier1")
+                    : .appleVersion1
+
+                try await SoundRecognitionManager.shared.startRecognition(
+                    observer: resultsObserver,
+                    modelSource: modelSource,
+                    windowDuration: UserDefaults.standard.analysisWindowDuration,
+                    overlapFactor: UserDefaults.standard.analysisOverlapFactor
+                )
+
+                // Only reached if setup fully succeeded.
                 updateResultsTextView(with: "Analysis started.\n")
                 updateAnalysisButtonState(isRecording: true)
                 analysisButton?.isEnabled = true
 
-            } catch let error as AudioAnalysisError {
-                print("Audio analysis setup failed: \(error.localizedDescription)")
-                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-                stopAudioAnalysis()
-                showAlert(title: "Analysis Setup Error", message: error.localizedDescription)
             } catch {
-                print("Unexpected error: \(error.localizedDescription)")
-                updateResultsTextView(with: "Analysis setup failed: \(error.localizedDescription)\n")
-                stopAudioAnalysis()
-                showAlert(title: "Analysis Setup Error", message: "An unexpected error occurred: \(error.localizedDescription)")
+                // Clean up the manager (won't crash even if setup never completed).
+                SoundRecognitionManager.shared.stopRecognition()
+
+                // Always re-enable the button so the user can try again.
+                analysisButton?.isEnabled = true
+                updateAnalysisButtonState(isRecording: false)
+
+                let message = (error as? AudioAnalysisError)?.errorDescription
+                    ?? error.localizedDescription
+
+                updateResultsTextView(with: "Failed to start: \(message)\n")
+                showAlert(title: "Analysis Setup Error", message: message)
             }
         }
     }
@@ -286,10 +279,7 @@ class MainViewController: UIViewController, UIPopoverPresentationControllerDeleg
         analysisSubscription?.cancel()
         analysisSubscription = nil
         
-        
-        // 3. Update Core Data session end time and save
-        // The observer handles its own cleanup and saving
-        resultsObserver.finalizeSession()
+    
         persistenceController.save() // Save the updated session
   
         updateResultsTextView(with: "Analysis stopped.\n")

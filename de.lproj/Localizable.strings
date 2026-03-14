@@ -47,3 +47,6 @@
 // NO PERMISSION
 "NoPermission_Headline" = "Mikrofonzugriff verweigert oder eingeschränkt!";
 "NoPermission_message" = "Ohne Mikrofonzugriff funktioniert die App nicht! Öffne die iOS-Einstellungen > SnoreDoc und aktiviere die Mikrofonberechtigung.";
+
+//ExportImportSection
+"ImportOptions_Info" = "Merge keeps existing records. Replace removes everything first.";

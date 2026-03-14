@@ -5,6 +5,7 @@
 //  Created by musie Ghirmay on 14.07.25.
 //
 
+
 import SwiftUI
 import Charts
 
@@ -14,7 +15,7 @@ struct BoxPlotChart: View {
     let xLabel: String?
     let yLabel: String?
 
-    init(data: [Double], title: String, xLabel: String? = nil, yLabel: String? = nil) {
+    init(data: [Double], title: String, helpInfo: HelpDefinition, xLabel: String? = nil, yLabel: String? = nil) {
         self.data = data
         self.title = title
         self.xLabel = xLabel
@@ -22,25 +23,14 @@ struct BoxPlotChart: View {
     }
 
     var body: some View {
-        VStack {
-            Text(title)
-                .font(.headline)
-                .padding(.bottom, 5)
+        VStack(alignment: .leading, spacing: 8) {
+            ChartHeader(title: title, helpInfo: HelpDataFactory.boxPlotChart)
 
             if data.isEmpty {
-                Text("No data for this box plot.")
-                    .foregroundColor(.gray)
-                    .padding(.vertical, 40)
+                ChartEmptyState()
             } else {
                 let stats = boxPlotStats(for: data)
-                HStack {
-                    Text("Boxplot ")
-                        .font(.headline)
-                    HelpPopoverButton(info: HelpDataFactory.boxPlotChart)
-                }
-                .padding(.horizontal)
                 Chart {
-                    // Whisker (vertical line from min → max)
                     RuleMark(
                         x: .value("Category", "Distribution"),
                         yStart: .value("Min", stats.min),
@@ -48,7 +38,6 @@ struct BoxPlotChart: View {
                     )
                     .foregroundStyle(.blue.opacity(0.6))
 
-                    // Box (Q1 → Q3)
                     RectangleMark(
                         x: .value("Category", "Distribution"),
                         yStart: .value("Q1", stats.q1),
@@ -56,29 +45,24 @@ struct BoxPlotChart: View {
                     )
                     .foregroundStyle(.blue.opacity(0.3))
 
-                    // Median line (horizontal rule across the box)
-                    RuleMark(
-                        y: .value("Median", stats.median)
-                    )
-                    .annotation(position: .trailing) {
-                        Text(String(format: "%.2f", stats.median))
-                            .font(.caption2)
-                            .foregroundColor(.blue)
-                    }
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    .foregroundStyle(.blue)
+                    RuleMark(y: .value("Median", stats.median))
+                        .annotation(position: .trailing) {
+                            Text(String(format: "%.2f", stats.median))
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        }
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .foregroundStyle(.blue)
                 }
                 .chartYAxisLabel(yLabel ?? "")
                 .chartXAxisLabel(xLabel ?? "")
                 .chartPlotStyle { plot in
                     plot.frame(minHeight: 200)
                 }
-                .padding()
             }
         }
     }
 
-    // MARK: - Compute Box Plot Statistics
     func boxPlotStats(for values: [Double]) -> (min: Double, q1: Double, median: Double, q3: Double, max: Double) {
         let sorted = values.sorted()
         guard !sorted.isEmpty else { return (0, 0, 0, 0, 0) }
@@ -100,13 +84,4 @@ struct BoxPlotChart: View {
             max: sorted.last ?? 0
         )
     }
-}
-
-#Preview {
-    BoxPlotChart(
-        data: [1.2, 2.5, 3.8, 4.1, 5.0, 6.3, 7.8, 8.0],
-        title: "Sleep Confidence",
-        xLabel: "Distribution",
-        yLabel: "Confidence"
-    )
 }

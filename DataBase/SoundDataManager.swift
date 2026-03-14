@@ -79,6 +79,26 @@ class SoundDataManager: ObservableObject {
 
         return newSoundEvent
     }
+    
+    /// Fetches all SnoreEvents for a single RecordingSession.
+    /// Mirrors the pattern of fetchSoundEvents(for recordingSession:) —
+    /// casts the Core Data NSSet relationship and sorts by startTime.
+    func fetchSnoreEvents(for recordingSession: RecordingSession) -> [SnoreEvent] {
+        guard let set = recordingSession.snoreEvents as? Set<SnoreEvent> else {
+            return []
+        }
+        return set.sorted { ($0.startTime ?? .distantPast) < ($1.startTime ?? .distantPast) }
+    }
+
+    /// Fetches ALL SnoreEvents across every RecordingSession for a given calendar date.
+    /// Useful when you need a flat list for charting across the full night.
+    func fetchSnoreEvents(for date: Date) -> [SnoreEvent] {
+        let sessions = fetchRecordingSessions(for: date)
+        return sessions.flatMap { session -> [SnoreEvent] in
+            guard let set = session.snoreEvents as? Set<SnoreEvent> else { return [] }
+            return set.sorted { ($0.startTime ?? .distantPast) < ($1.startTime ?? .distantPast) }
+        }
+    }
 
     // You might want to add a method to fetch all SoundEvents for a session (though FetchRequest in SwiftUI handles this)
     func fetchSoundEvents(for recordingSession: RecordingSession) -> [SoundEvent] {
@@ -172,6 +192,8 @@ class SoundDataManager: ObservableObject {
         return totalSleepTime
     }
     
+    
+    
     // MARK: - Snore Event Aggregation (Crucial for Charts!)
     // This is the logic you'd run periodically or at the end of a session
     // to aggregate SoundEvents into SnoreEvents.
@@ -191,9 +213,8 @@ class SoundDataManager: ObservableObject {
     
     func reconcileIncompleteSessions(in context: NSManagedObjectContext) {
         let request: NSFetchRequest<RecordingSession> = RecordingSession.fetchRequest()
-        // Target sessions that have no endTime
         request.predicate = NSPredicate(format: "endTime == nil")
-        
+
         do {
             let sessions = try context.fetch(request)
             for session in sessions {
@@ -201,18 +222,29 @@ class SoundDataManager: ObservableObject {
                 eventRequest.predicate = NSPredicate(format: "session == %@", session)
                 eventRequest.sortDescriptors = [NSSortDescriptor(keyPath: \SnoreEvent.startTime, ascending: false)]
                 eventRequest.fetchLimit = 1
-                
+
                 if let latestEvent = try context.fetch(eventRequest).first,
                    let lastTime = latestEvent.startTime {
                     session.endTime = lastTime
                     session.lastUpdate = lastTime
-                    
                 } else {
-                    // Fallback: If no events exist, set end time to 1 minute after start
-                    // or flag it as an incomplete session
                     session.endTime = session.startTime?.addingTimeInterval(60)
                     print("Patched empty session \(session.objectID) with default duration.")
                 }
+
+                // Recalculate quality score now that endTime is set
+                let start = session.startTime ?? Date()
+                let end   = session.endTime   ?? Date()
+                let durationHours = end.timeIntervalSince(start) / 3600.0
+
+                session.qualityScore = SleepQuality.calculateQualityScore(
+                    snoreCount:      Int(session.totalSnoreEvents),
+                    relatedCount:    Int(session.totalSnoreRelated),
+                    nonSnoreCount:   Int(session.totalNonSnoreEvents),
+                    durationInHours: durationHours
+                )
+
+                print("Recalculated quality for session \(session.id?.uuidString ?? "N/A"): \(session.qualityScore)")
             }
             try context.save()
         } catch {

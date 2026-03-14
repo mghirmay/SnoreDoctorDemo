@@ -51,3 +51,5 @@
 "NoPermission_message" = "Without permission to the microphone the app will not work! Open the iOS Settings > SnoreDoc and enable the permission for the microphone.";
 
 
+//ExportImportSection
+"ImportOptions_Info" = "Merge keeps existing records. Replace removes everything first.";

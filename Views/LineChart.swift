@@ -5,42 +5,31 @@
 //  Created by musie Ghirmay on 14.07.25.
 //
 
-
-// LineChart.swift
 import SwiftUI
 import Charts
 
 struct LineChart: View {
-    // Data is a tuple of (Date, Double) for time-series data
     let data: [(Date, Double)]
     let title: String
+    let helpInfo: HelpDefinition
     let xLabel: String
     let yLabel: String
 
     var body: some View {
-        VStack {
-            Text(title)
-                .font(.headline)
-                .padding(.bottom, 5)
+        VStack(alignment: .leading, spacing: 8) {
+            ChartHeader(title: title, helpInfo: helpInfo)
 
             if data.isEmpty {
-                Text("No data for this line chart.")
-                    .foregroundColor(.gray)
+                ChartEmptyState()
             } else {
-                HStack {
-                    Text("LineChart ")
-                        .font(.headline)
-                    HelpPopoverButton(info: HelpDataFactory.generalTrendChart)
-                }.padding(.horizontal)
-                
                 Chart {
-                    ForEach(data.sorted(by: { $0.0 < $1.0 }), id: \.0) { date, value in // Sort by date
+                    ForEach(data.sorted(by: { $0.0 < $1.0 }), id: \.0) { date, value in
                         LineMark(
                             x: .value(xLabel, date),
                             y: .value(yLabel, value)
                         )
-                        .interpolationMethod(.catmullRom) // Smooth line
-                        .symbol(.circle) // Add markers for each point
+                        .interpolationMethod(.catmullRom)
+                        .symbol(.circle)
                     }
                 }
                 .chartXAxis {
@@ -54,7 +43,7 @@ struct LineChart: View {
                     AxisMarks { value in
                         AxisGridLine()
                         AxisTick()
-                        AxisValueLabel(String(format: "%.1f", value.as(Double.self) ?? 0)) // Format Y-axis values
+                        AxisValueLabel(String(format: "%.1f", value.as(Double.self) ?? 0))
                     }
                 }
             }
@@ -62,9 +51,9 @@ struct LineChart: View {
     }
 
     private func formatDate(_ date: Date?) -> String {
-        guard let date = date else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm" // Example: "14:30"
-        return formatter.string(from: date)
+        guard let date else { return "" }
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f.string(from: date)
     }
 }

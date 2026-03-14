@@ -285,7 +285,7 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
         let totalSnoreRelatedEventsDetected = Int(session.totalSnoreRelated);
         let totalNonSnoreEventsDetected = Int(session.totalNonSnoreEvents);
      
-        session.qualityScore = calculateQualityScore(
+        session.qualityScore = SleepQuality.calculateQualityScore(
             snoreCount: totalSnoreEventsDetected,
                 relatedCount: totalSnoreRelatedEventsDetected,
                 nonSnoreCount: totalNonSnoreEventsDetected,
@@ -306,26 +306,4 @@ class SoundEventDetectionObserver: NSObject, SNResultsObserving {
     
     
     
-    /// Calculates the sleep quality score based on detected audio events.
-    /// Returns a Double between 0.0 (Poor) and 1.0 (Excellent).
-    private func calculateQualityScore(
-        snoreCount: Int,
-        relatedCount: Int,
-        nonSnoreCount: Int,
-        durationInHours: Double
-    ) -> Double {
-        let totalEvents = Double(snoreCount + relatedCount + nonSnoreCount)
-        
-        // If no events detected, consider it a perfect, quiet night
-        guard totalEvents > 0 else { return 1.0 }
-        
-        // Calculate ratio of "problem" events vs total activity
-        let problemEvents = Double(snoreCount + relatedCount)
-        let cleanlinessRatio = 1.0 - (problemEvents / totalEvents)
-        
-        // Penalize short sessions (e.g., sessions under 4 hours are marked down)
-        let durationMultiplier = min(durationInHours / 4.0, 1.0)
-        
-        return cleanlinessRatio * durationMultiplier
-    }
 }

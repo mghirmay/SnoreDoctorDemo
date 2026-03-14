@@ -28,6 +28,7 @@ struct SettingsView: View {
                 PostProcessingSection()
                 AudioRecordingSection()
                 PlaybackSettingsSection()
+                ExportImportSection()        
                 DataManagementSection(
                     clearDataAction: clearAllData,
                     resetSettingsAction: resetSettingsToDefaults,

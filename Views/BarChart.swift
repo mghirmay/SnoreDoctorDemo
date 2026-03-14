@@ -13,6 +13,7 @@ import Charts
 struct BarChart: View {
     let data: [String: Int] // Dictionary for category-value pairs
     let title: String
+    let helpInfo: HelpDefinition
     var xLabel: String?
     var yLabel: String?
 
